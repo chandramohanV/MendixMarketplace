@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, isAbortError } from '../api/studio';
+import { ApiError, isAbortError } from './api';
 
 export interface QueryState<T> {
   data: T | undefined;

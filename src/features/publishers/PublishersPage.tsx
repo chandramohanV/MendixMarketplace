@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { COMPONENTS, PUBLISHER_LIST, formatNumber } from '../data/components';
+import { COMPONENTS, PUBLISHER_LIST, formatNumber } from '../../data/components';
+import { routes } from '../../lib/routes';
 
-export default function Publishers() {
+export default function PublishersPage() {
   const rows = PUBLISHER_LIST.map((p) => {
     const items = COMPONENTS.filter((c) => c.publisher === p.name);
     const rated = items.filter((c) => c.ratingCount);
@@ -19,7 +20,7 @@ export default function Publishers() {
       <p className="muted">Companies and community members who share components on the marketplace.</p>
       <div className="publisher-grid">
         {rows.map((p) => (
-          <Link key={p.name} to={`/components?publisher=${encodeURIComponent(p.name)}`} className="card publisher-card">
+          <Link key={p.name} to={routes.explore({ publisher: p.name })} className="card publisher-card">
             <div className="avatar lg">
               {p.name
                 .split(' ')

@@ -1,13 +1,15 @@
 import { Fragment, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { TYPES, CATEGORIES, PLATFORM_VERSIONS, LICENSE_TYPES } from '../data/components';
-import { useCatalog } from '../catalog';
-import { useStore } from '../store';
-import { getAutoPublishMs } from '../demoSettings';
-import type { ComponentType, PackageFile, Submission, SubmissionInput } from '../types';
+import { TYPES, CATEGORIES, PLATFORM_VERSIONS, LICENSE_TYPES } from '../../data/components';
+import { useCatalog } from '../../catalog';
+import { useStore } from '../../store';
+import { getAutoPublishMs } from '../../lib/demoSettings';
+import type { ComponentType, PackageFile, Submission, SubmissionInput } from '../../types';
+import { routes } from '../../lib/routes';
+import { STORAGE_KEYS } from '../../lib/storageKeys';
 
 const STEPS = ['General', 'Package', 'Details', 'Review'] as const;
-const DRAFT_KEY = 'mp.submitDraft';
+const DRAFT_KEY = STORAGE_KEYS.submitDraft;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const SHORT_MAX = 160;
 const SUBMIT_DELAY_MS = 600;
@@ -183,7 +185,7 @@ function Field({
   );
 }
 
-export default function Submit() {
+export default function SubmitPage() {
   const [params] = useSearchParams();
   const editId = params.get('edit') ? Number(params.get('edit')) : null;
   const { submissions, submitComponent, updateSubmission, notify } = useStore();
@@ -325,7 +327,7 @@ export default function Submit() {
       <div className="container page narrow center">
         <h1>Submission can't be edited</h1>
         <p className="muted">Only submissions that are still pending review can be edited.</p>
-        <Link to="/my?tab=submissions" className="btn btn-primary">
+        <Link to={routes.myMarketplace('submissions')} className="btn btn-primary">
           Go to My submissions
         </Link>
       </div>
@@ -346,10 +348,10 @@ export default function Submit() {
           in about {wait}.
         </p>
         <div className="row-center">
-          <Link to={`/components/${done.slug}`} className="btn btn-primary">
+          <Link to={routes.component(done.slug)} className="btn btn-primary">
             View component
           </Link>
-          <Link to="/my?tab=submissions" className="btn btn-secondary">
+          <Link to={routes.myMarketplace('submissions')} className="btn btn-secondary">
             My submissions
           </Link>
           {editId === null && (
@@ -558,7 +560,7 @@ export default function Submit() {
               <label className="check">
                 <input type="checkbox" {...a11y('terms')} checked={form.terms} onChange={set('terms')} />
                 <span className="check-label">
-                  I agree to the <Link to="/guidelines">publishing guidelines</Link>
+                  I agree to the <Link to={routes.guidelines}>publishing guidelines</Link>
                 </span>
               </label>
               {showError('terms') && (

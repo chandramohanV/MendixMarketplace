@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { slugify } from './data/components';
-import { getAutoPublishMs } from './demoSettings';
+import { getAutoPublishMs } from './lib/demoSettings';
 import type { DownloadRecord, Review, Submission, SubmissionInput, SubmissionStatus } from './types';
+import { STORAGE_KEYS } from './lib/storageKeys';
 
 /** Submission ids start here so they never collide with catalog ids. */
 const SUBMISSION_ID_BASE = 1_000_000;
@@ -43,10 +44,12 @@ function save(key: string, value: unknown): void {
 const isObject = (v: unknown) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [favorites, setFavorites] = useState<number[]>(() => load('mp.favorites', [], Array.isArray));
-  const [userReviews, setUserReviews] = useState<Record<number, Review[]>>(() => load('mp.reviews', {}, isObject));
-  const [downloads, setDownloads] = useState<DownloadRecord[]>(() => load('mp.downloads', [], Array.isArray));
-  const [submissions, setSubmissions] = useState<Submission[]>(() => load('mp.submissions', [], Array.isArray));
+  const [favorites, setFavorites] = useState<number[]>(() => load(STORAGE_KEYS.favorites, [], Array.isArray));
+  const [userReviews, setUserReviews] = useState<Record<number, Review[]>>(() =>
+    load(STORAGE_KEYS.reviews, {}, isObject),
+  );
+  const [downloads, setDownloads] = useState<DownloadRecord[]>(() => load(STORAGE_KEYS.downloads, [], Array.isArray));
+  const [submissions, setSubmissions] = useState<Submission[]>(() => load(STORAGE_KEYS.submissions, [], Array.isArray));
   const [toast, setToast] = useState<{ message: string; key: number } | null>(null);
 
   // Mirror of the latest submissions so actions can return the record they create synchronously.
@@ -56,16 +59,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [submissions]);
 
   useEffect(() => {
-    save('mp.favorites', favorites);
+    save(STORAGE_KEYS.favorites, favorites);
   }, [favorites]);
   useEffect(() => {
-    save('mp.reviews', userReviews);
+    save(STORAGE_KEYS.reviews, userReviews);
   }, [userReviews]);
   useEffect(() => {
-    save('mp.downloads', downloads);
+    save(STORAGE_KEYS.downloads, downloads);
   }, [downloads]);
   useEffect(() => {
-    save('mp.submissions', submissions);
+    save(STORAGE_KEYS.submissions, submissions);
   }, [submissions]);
 
   const notify = useCallback((message: string) => {

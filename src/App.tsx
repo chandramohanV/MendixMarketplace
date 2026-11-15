@@ -1,30 +1,32 @@
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
-import Browse from './pages/Browse';
-import Detail from './pages/Detail';
-import Publishers from './pages/Publishers';
-import Studio from './pages/Studio';
-import StudioManage from './pages/StudioManage';
-import Submit from './pages/Submit';
-import MyMarketplace from './pages/MyMarketplace';
-import { Guidelines, NotFound } from './pages/Misc';
+import NotFoundPage from './components/NotFoundPage';
+import ComponentDetailPage from './features/component-detail/ComponentDetailPage';
+import ExplorePage from './features/explore/ExplorePage';
+import GuidelinesPage from './features/guidelines/GuidelinesPage';
+import MyMarketplacePage from './features/my-marketplace/MyMarketplacePage';
+import PublishersPage from './features/publishers/PublishersPage';
+import StudioManagePage from './features/studio/StudioManagePage';
+import StudioPage from './features/studio/StudioPage';
+import SubmitPage from './features/submit/SubmitPage';
+import { routes } from './lib/routes';
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Browse />} />
-        <Route path="components" element={<Browse />} />
-        <Route path="components/:slug" element={<Detail />} />
-        <Route path="link/components" element={<Navigate to="/components" replace />} />
-        <Route path="studio" element={<Studio />} />
-        <Route path="studio/manage" element={<StudioManage />} />
-        <Route path="link/studiopro" element={<Navigate to="/studio" replace />} />
-        <Route path="publishers" element={<Publishers />} />
-        <Route path="submit" element={<Submit />} />
-        <Route path="my" element={<MyMarketplace />} />
-        <Route path="guidelines" element={<Guidelines />} />
-        <Route path="*" element={<NotFound />} />
+        <Route index element={<ExplorePage />} />
+        <Route path="components" element={<ExplorePage />} />
+        <Route path="components/:slug" element={<ComponentDetailPage />} />
+        <Route path="link/components" element={<Navigate to={routes.explore()} replace />} />
+        <Route path="studio" element={<StudioPage />} />
+        <Route path="studio/manage" element={<StudioManagePage />} />
+        <Route path="link/studiopro" element={<Navigate to={routes.studio} replace />} />
+        <Route path="publishers" element={<PublishersPage />} />
+        <Route path="submit" element={<SubmitPage />} />
+        <Route path="my" element={<MyMarketplacePage />} />
+        <Route path="guidelines" element={<GuidelinesPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

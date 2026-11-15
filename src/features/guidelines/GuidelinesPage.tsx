@@ -1,8 +1,9 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { SUPPORT_INFO } from '../data/components';
+import { SUPPORT_INFO } from '../../data/components';
+import { routes } from '../../lib/routes';
 
-export function Guidelines() {
+export default function GuidelinesPage() {
   return (
     <div className="container page narrow prose">
       <h1>Publishing guidelines</h1>
@@ -27,23 +28,10 @@ export function Guidelines() {
         be unlisted.
       </p>
       <p>
-        <Link to="/submit" className="btn btn-primary">
+        <Link to={routes.submit} className="btn btn-primary">
           Start a submission
         </Link>
       </p>
-    </div>
-  );
-}
-
-export function NotFound() {
-  return (
-    <div className="container page narrow center">
-      <div className="empty-icon">🧩</div>
-      <h1>Page not found</h1>
-      <p className="muted">The page or component you're looking for doesn't exist.</p>
-      <Link to="/components" className="btn btn-primary">
-        Browse components
-      </Link>
     </div>
   );
 }

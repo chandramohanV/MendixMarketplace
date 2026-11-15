@@ -2,13 +2,14 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { Icon, type IconName } from './icons';
+import { routes } from '../lib/routes';
 
 function TopBar({ onMenu }: { onMenu: () => void }) {
   const [q, setQ] = useState('');
   const navigate = useNavigate();
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    navigate(q.trim() ? `/components?q=${encodeURIComponent(q.trim())}` : '/components');
+    navigate(routes.explore({ q: q.trim() }));
     setQ('');
   };
   return (
@@ -33,10 +34,10 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         </button>
       </form>
       <div className="topbar-right">
-        <Link to="/guidelines" className="topbar-icon" title="Help">
+        <Link to={routes.guidelines} className="topbar-icon" title="Help">
           <Icon name="help" />
         </Link>
-        <Link to="/my" className="topbar-avatar" title="Demo User – My Marketplace">
+        <Link to={routes.myMarketplace()} className="topbar-avatar" title="Demo User – My Marketplace">
           DU
         </Link>
       </div>
@@ -70,28 +71,28 @@ function NavItem({
 function Sidebar({ open, collapsed, onCollapse }: { open: boolean; collapsed: boolean; onCollapse: () => void }) {
   const { favorites } = useStore();
   const { pathname } = useLocation();
-  const exploreActive = pathname === '/' || pathname.startsWith('/components');
+  const exploreActive = pathname === routes.home || pathname.startsWith(routes.explore());
   return (
     <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`} aria-label="Sidebar navigation">
       <nav className="nav-group">
-        <NavItem to="/components" icon="explore" label="Explore" active={exploreActive} />
-        <NavItem to="/my" icon="heart" label="My Marketplace">
+        <NavItem to={routes.explore()} icon="explore" label="Explore" active={exploreActive} />
+        <NavItem to={routes.myMarketplace()} icon="heart" label="My Marketplace">
           {favorites.length > 0 && <span className="nav-count">{favorites.length}</span>}
         </NavItem>
-        <NavItem to="/publishers" icon="building" label="Publishers" />
-        <NavItem to="/submit" icon="upload" label="Contribute" />
+        <NavItem to={routes.publishers} icon="building" label="Publishers" />
+        <NavItem to={routes.submit} icon="upload" label="Contribute" />
       </nav>
       <div className="nav-sep" />
       <nav className="nav-group">
         <NavLink
-          to="/studio"
+          to={routes.studio}
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           title="Download Studio"
         >
           <span className="studio-mark">bx</span>
           <span className="nav-text">Download Studio</span>
         </NavLink>
-        <NavItem to="/guidelines" icon="book" label="Guidelines" />
+        <NavItem to={routes.guidelines} icon="book" label="Guidelines" />
       </nav>
       <button
         className="nav-item collapse-btn"
@@ -109,9 +110,9 @@ export function Footer() {
   return (
     <footer className="footer">
       <span>© BloxMarket demo 2026. All data is fictional.</span>
-      <Link to="/guidelines">Terms of Use</Link>
-      <Link to="/guidelines">Privacy Policy</Link>
-      <Link to="/guidelines">Publishing Guidelines</Link>
+      <Link to={routes.guidelines}>Terms of Use</Link>
+      <Link to={routes.guidelines}>Privacy Policy</Link>
+      <Link to={routes.guidelines}>Publishing Guidelines</Link>
       <span className="footer-cookie">
         <Icon name="cookie" /> Cookie Settings
       </span>
@@ -121,10 +122,11 @@ export function Footer() {
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const isComponentPage = useMatch('/components/:slug');
-  const isStudioPage = useMatch('/studio');
-  const isStudioManagePage = useMatch('/studio/manage');
-  const isDetail = isComponentPage || isStudioPage || isStudioManagePage; // full-width pages without the sidebar
+  const isComponentPage = useMatch(routes.component(':slug'));
+  const isStudioPage = useMatch(routes.studio);
+  const isStudioManagePage = useMatch(routes.studioManage);
+  // These pages use the full width, without the sidebar.
+  const isFullWidthPage = Boolean(isComponentPage || isStudioPage || isStudioManagePage);
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -141,9 +143,11 @@ export default function Layout() {
     <div className="shell">
       <TopBar onMenu={() => setMenuOpen((o) => !o)} />
       <div className="shell-body">
-        {!isDetail && <Sidebar open={menuOpen} collapsed={collapsed} onCollapse={() => setCollapsed((c) => !c)} />}
+        {!isFullWidthPage && (
+          <Sidebar open={menuOpen} collapsed={collapsed} onCollapse={() => setCollapsed((c) => !c)} />
+        )}
         {/* Mouse convenience only: the backdrop covers the page while the mobile menu is open. */}
-        {menuOpen && !isDetail && (
+        {menuOpen && !isFullWidthPage && (
           <div className="backdrop" role="presentation" aria-hidden="true" onClick={() => setMenuOpen(false)} />
         )}
         <div className="main-scroll">

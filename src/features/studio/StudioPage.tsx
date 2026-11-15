@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { RELEASE_TYPE_INFO, type ReleaseListItem, type ReleaseType, type StudioRelease } from '../../shared/studio';
-import { getRelease, getSummary, listReleases, type ApiError } from '../api/studio';
-import { useApiQuery } from '../hooks/useApiQuery';
-import { longDate, monthYear } from '../lib/studioFormat';
-import { useStore } from '../store';
-import { Icon } from '../components/icons';
-import { Modal, SkeletonRows, TypeBadge } from '../components/studio-ui';
+import { RELEASE_TYPE_INFO, type ReleaseListItem, type ReleaseType, type StudioRelease } from '../../../shared/studio';
+import { getRelease, getSummary, listReleases, type ApiError } from './api';
+import { useApiQuery } from './useApiQuery';
+import { longDate, monthYear } from '../../lib/dates';
+import { useStore } from '../../store';
+import { Icon } from '../../components/icons';
+import { Modal } from '../../components/Modal';
+import { SkeletonRows, TypeBadge } from './ui';
+import { routes } from '../../lib/routes';
 
 const PAGE_SIZE = 10;
 type SortParam = '' | 'date-desc' | 'date-asc';
@@ -192,7 +194,7 @@ const ARIA_SORT: Record<SortParam, 'none' | 'ascending' | 'descending'> = {
   'date-desc': 'descending',
 };
 
-export default function Studio() {
+export default function StudioPage() {
   const { notify } = useStore();
   const [params, setParams] = useSearchParams();
   const [notesFor, setNotesFor] = useState<string | null>(null);
@@ -341,7 +343,7 @@ export default function Studio() {
       <section className="releases">
         <div className="releases-head">
           <h2 className="releases-title">All Releases</h2>
-          <Link to="/studio/manage" className="btn btn-secondary sm">
+          <Link to={routes.studioManage} className="btn btn-secondary sm">
             Manage releases
           </Link>
         </div>

@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './storageKeys';
 // Demo-only knobs. The automated tests use these to make timing deterministic.
 
 /** Default delay before the demo reviewer auto-publishes a pending submission. */
@@ -9,7 +10,7 @@ export const AUTO_PUBLISH_MS = 5000;
  */
 export function getAutoPublishMs(): number {
   try {
-    const v = Number(localStorage.getItem('mp.autoPublishMs'));
+    const v = Number(localStorage.getItem(STORAGE_KEYS.autoPublishMs));
     return Number.isFinite(v) && v > 0 ? v : AUTO_PUBLISH_MS;
   } catch {
     return AUTO_PUBLISH_MS;

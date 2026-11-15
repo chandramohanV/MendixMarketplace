@@ -1,12 +1,13 @@
 import { useState, type CSSProperties, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { formatDate, SUPPORT_INFO } from '../data/components';
-import { useCatalog } from '../catalog';
-import { useStore } from '../store';
-import { ComponentCard, FavoriteButton, Stars, StatusBadge, SupportBadge } from '../components/ui';
-import { Icon } from '../components/icons';
-import { NotFound } from './Misc';
-import type { Component, Review } from '../types';
+import { formatDate, SUPPORT_INFO } from '../../data/components';
+import { useCatalog } from '../../catalog';
+import { useStore } from '../../store';
+import { ComponentCard, FavoriteButton, Stars, StatusBadge, SupportBadge } from '../../components/ui';
+import { Icon } from '../../components/icons';
+import NotFoundPage from '../../components/NotFoundPage';
+import type { Component, Review } from '../../types';
+import { routes } from '../../lib/routes';
 
 const TABS = ['Overview', 'Documentation', 'Releases', 'Reviews', 'Developers'] as const;
 type Tab = (typeof TABS)[number];
@@ -115,17 +116,17 @@ function ReviewForm({ c, onDone }: { c: Component; onDone: () => void }) {
   );
 }
 
-export default function Detail() {
+export default function ComponentDetailPage() {
   const { slug = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const { userReviews, recordDownload, notify } = useStore();
   const { components, findBySlug } = useCatalog();
   const c = findBySlug(slug);
   const [version, setVersion] = useState<string | null>(null);
-  const [writing, setWriting] = useState(false);
+  const [isWritingReview, setIsWritingReview] = useState(false);
   const [helpful, setHelpful] = useState<Record<number, boolean>>({});
 
-  if (!c) return <NotFound />;
+  if (!c) return <NotFoundPage />;
 
   const tabParam = params.get('tab');
   const tab: Tab = isTab(tabParam) ? tabParam : 'Overview';
@@ -153,8 +154,7 @@ export default function Detail() {
   return (
     <div className="detail">
       <nav className="breadcrumbs">
-        <Link to="/">Home</Link> / <Link to={`/components?type=${encodeURIComponent(c.type)}`}>{c.type}</Link> /{' '}
-        <span>{c.name}</span>
+        <Link to="/">Home</Link> / <Link to={routes.explore({ type: c.type })}>{c.type}</Link> / <span>{c.name}</span>
       </nav>
 
       {c.support === 'Deprecated' && (
@@ -163,7 +163,7 @@ export default function Detail() {
       {c.status === 'pending' && (
         <div className="alert alert-info" role="status">
           This submission is pending review and is only visible to you.{' '}
-          <Link to="/my?tab=submissions">Manage your submissions</Link>
+          <Link to={routes.myMarketplace('submissions')}>Manage your submissions</Link>
         </div>
       )}
       {c.status === 'rejected' && (
@@ -339,10 +339,10 @@ export default function Detail() {
             <div className="tab-panel">
               <RatingBreakdown reviews={reviews} rating={c.rating} count={c.ratingCount} />
               {isPublic &&
-                (writing ? (
-                  <ReviewForm c={c} onDone={() => setWriting(false)} />
+                (isWritingReview ? (
+                  <ReviewForm c={c} onDone={() => setIsWritingReview(false)} />
                 ) : (
-                  <button className="btn btn-primary" onClick={() => setWriting(true)}>
+                  <button className="btn btn-primary" onClick={() => setIsWritingReview(true)}>
                     Write a review
                   </button>
                 ))}
@@ -396,7 +396,7 @@ export default function Detail() {
               <span className="pub-logo">{initials(c.publisher)}</span>
               <b>{c.publisher}</b>
             </div>
-            <Link to={`/components?publisher=${encodeURIComponent(c.publisher)}`} className="link">
+            <Link to={routes.explore({ publisher: c.publisher })} className="link">
               Company Profile
             </Link>
           </div>
@@ -462,11 +462,11 @@ export default function Detail() {
           </div>
           <div className="side-block">
             <h4>Categories</h4>
-            <Link to={`/components?category=${encodeURIComponent(c.category)}`} className="tag">
+            <Link to={routes.explore({ category: c.category })} className="tag">
               {c.category}
             </Link>
             {c.industry !== 'Agnostic' && (
-              <Link to={`/components?industry=${encodeURIComponent(c.industry)}`} className="tag">
+              <Link to={routes.explore({ industry: c.industry })} className="tag">
                 {c.industry}
               </Link>
             )}
@@ -478,7 +478,7 @@ export default function Detail() {
             <a className="link icon-link" href="#support" onClick={(e) => e.preventDefault()}>
               <Icon name="headset" /> Contact {c.publisher} Support
             </a>
-            <Link className="link icon-link" to="/guidelines">
+            <Link className="link icon-link" to={routes.guidelines}>
               <Icon name="link" /> Learn about Support Policy
             </Link>
           </div>

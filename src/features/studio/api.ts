@@ -13,7 +13,7 @@ import {
   type StudioRelease,
   type StudioSummary,
   type UpdateReleaseInput,
-} from '../../shared/studio';
+} from '../../../shared/studio';
 
 const BASE = '/api/studio';
 

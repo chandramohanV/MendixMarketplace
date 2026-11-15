@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { TYPES, CATEGORIES, SUPPORT, PLATFORM_VERSIONS, INDUSTRIES } from '../data/components';
-import { useCatalog } from '../catalog';
-import { ComponentCard, Pagination, Stars } from '../components/ui';
-import { HeroArt, Icon } from '../components/icons';
-import type { Component } from '../types';
+import { TYPES, CATEGORIES, SUPPORT, PLATFORM_VERSIONS, INDUSTRIES } from '../../data/components';
+import { useCatalog } from '../../catalog';
+import { ComponentCard, Pagination, Stars } from '../../components/ui';
+import { HeroArt, Icon } from '../../components/icons';
+import type { Component } from '../../types';
+import { routes } from '../../lib/routes';
 
 const PAGE_SIZE = 18;
 const MULTI = ['type', 'category', 'support', 'industry', 'publisher'] as const;
@@ -62,8 +63,8 @@ function CheckGroup({
   onToggle: (name: MultiKey, value: string) => void;
   initial?: number;
 }) {
-  const [more, setMore] = useState(false);
-  const visible = initial && !more ? options.slice(0, initial) : options;
+  const [showAll, setShowAll] = useState(false);
+  const visible = initial && !showAll ? options.slice(0, initial) : options;
   return (
     <fieldset className="fgroup">
       <legend>{title}</legend>
@@ -74,8 +75,8 @@ function CheckGroup({
         </label>
       ))}
       {initial && options.length > initial && (
-        <button className="show-more" onClick={() => setMore((m) => !m)}>
-          <Icon name="chevronDown" className={more ? 'flip' : ''} /> {more ? 'Show Less' : 'Show More'}
+        <button className="show-more" onClick={() => setShowAll((v) => !v)}>
+          <Icon name="chevronDown" className={showAll ? 'flip' : ''} /> {showAll ? 'Show Less' : 'Show More'}
         </button>
       )}
     </fieldset>
@@ -100,7 +101,7 @@ function Section({ title, link, items }: { title: string; link: string; items: C
   );
 }
 
-export default function Browse() {
+export default function ExplorePage() {
   const [params, setParams] = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { components } = useCatalog();
@@ -141,7 +142,7 @@ export default function Browse() {
   if (f.version) chips.push({ label: `Studio ${f.version}`, remove: () => setOne('version', '') });
   if (f.rating)
     chips.push({ label: f.rating === 5 ? '5 stars' : `${f.rating}+ stars`, remove: () => setOne('rating', '') });
-  const filtering = chips.length > 0 || f.view === 'all';
+  const isFiltering = chips.length > 0 || f.view === 'all';
 
   const results = useMemo(
     () => components.filter((c) => matches(c, f)).toSorted(SORTS[f.sort].fn),
@@ -159,7 +160,7 @@ export default function Browse() {
     return [
       {
         title: 'Smarter with AI',
-        link: '/components?category=Artificial+Intelligence',
+        link: routes.explore({ category: 'Artificial Intelligence' }),
         items: top(
           live.filter((c) => ['Artificial Intelligence', 'Agents'].includes(c.category)),
           (a, b) => b.downloads - a.downloads,
@@ -167,7 +168,7 @@ export default function Browse() {
       },
       {
         title: 'From our Partners',
-        link: '/components?support=Partner',
+        link: routes.explore({ support: 'Partner' }),
         items: top(
           live.filter((c) => c.support === 'Partner'),
           (a, b) => b.rating - a.rating,
@@ -175,12 +176,12 @@ export default function Browse() {
       },
       {
         title: "What's New",
-        link: '/components?view=all&sort=newest',
+        link: routes.explore({ view: 'all', sort: 'newest' }),
         items: top(live, (a, b) => b.created.localeCompare(a.created) || b.id - a.id),
       },
       {
         title: 'Most Downloaded',
-        link: '/components?view=all&sort=relevance',
+        link: routes.explore({ view: 'all', sort: 'relevance' }),
         items: top(live, (a, b) => b.downloads - a.downloads),
       },
     ];
@@ -218,7 +219,7 @@ export default function Browse() {
 
       <div className="explore-body">
         <div className="explore-main">
-          {filtering ? (
+          {isFiltering ? (
             <>
               <div className="filtered-by">
                 <span className="filtered-label">Filtered by:</span>
@@ -284,7 +285,7 @@ export default function Browse() {
                   <h2>Scale with Studio</h2>
                   <p>Boost up the development process using reusable components.</p>
                 </div>
-                <Link to="/studio" className="btn btn-primary">
+                <Link to={routes.studio} className="btn btn-primary">
                   Download Studio
                 </Link>
                 <button className="btn btn-secondary filters-toggle" onClick={() => setFiltersOpen(true)}>

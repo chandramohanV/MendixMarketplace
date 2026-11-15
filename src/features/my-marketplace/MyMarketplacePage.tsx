@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { formatDate } from '../data/components';
-import { submissionToComponent, useCatalog } from '../catalog';
-import { useStore } from '../store';
-import { ComponentCard, ComponentIcon, StatusBadge } from '../components/ui';
-import type { Component, Review, Submission } from '../types';
+import { formatDate } from '../../data/components';
+import { submissionToComponent, useCatalog } from '../../catalog';
+import { useStore } from '../../store';
+import { ComponentCard, ComponentIcon, StatusBadge } from '../../components/ui';
+import type { Component, Review, Submission } from '../../types';
+import { routes } from '../../lib/routes';
 
 const TAB_KEYS = ['favorites', 'downloads', 'reviews', 'submissions'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -17,7 +18,7 @@ function SubmissionRow({ s }: { s: Submission }) {
   return (
     <tr>
       <td data-label="Component">
-        <Link to={`/components/${s.slug}`} className="inline-comp">
+        <Link to={routes.component(s.slug)} className="inline-comp">
           <ComponentIcon c={c} size={28} /> {s.name}
         </Link>
       </td>
@@ -28,11 +29,11 @@ function SubmissionRow({ s }: { s: Submission }) {
       <td data-label="Submitted">{formatDate(s.submittedAt.slice(0, 10))}</td>
       <td className="actions-cell">
         <div className="actions">
-          <Link to={`/components/${s.slug}`} className="btn btn-secondary sm">
+          <Link to={routes.component(s.slug)} className="btn btn-secondary sm">
             View
           </Link>
           {s.status === 'pending' && (
-            <Link to={`/submit?edit=${s.id}`} className="btn btn-secondary sm">
+            <Link to={routes.submitEdit(s.id)} className="btn btn-secondary sm">
               Edit
             </Link>
           )}
@@ -61,7 +62,7 @@ function SubmissionRow({ s }: { s: Submission }) {
   );
 }
 
-export default function MyMarketplace() {
+export default function MyMarketplacePage() {
   const [params, setParams] = useSearchParams();
   const { favorites, downloads, userReviews, submissions } = useStore();
   const { findById } = useCatalog();
@@ -110,7 +111,7 @@ export default function MyMarketplace() {
             <div className="empty-icon">♡</div>
             <h3>No favorites yet</h3>
             <p className="muted">Tap the heart on any component to save it here.</p>
-            <Link to="/components" className="btn btn-primary">
+            <Link to={routes.explore()} className="btn btn-primary">
               Browse components
             </Link>
           </div>
@@ -133,7 +134,7 @@ export default function MyMarketplace() {
                   c && (
                     <tr key={i}>
                       <td>
-                        <Link to={`/components/${c.slug}`} className="inline-comp">
+                        <Link to={routes.component(c.slug)} className="inline-comp">
                           <ComponentIcon c={c} size={28} /> {c.name}
                         </Link>
                       </td>
@@ -158,7 +159,7 @@ export default function MyMarketplace() {
             {myReviews.map((r, i) => (
               <div key={i} className="review">
                 <div className="review-head">
-                  <Link to={`/components/${r.c.slug}?tab=Reviews`}>
+                  <Link to={routes.component(r.c.slug, 'Reviews')}>
                     <b>{r.c.name}</b>
                   </Link>
                   <span className="muted small">{formatDate(r.date)}</span>
@@ -187,7 +188,7 @@ export default function MyMarketplace() {
                 Pending submissions are only visible to you. In this demo they are approved automatically after a few
                 seconds.
               </p>
-              <Link to="/submit" className="btn btn-primary">
+              <Link to={routes.submit} className="btn btn-primary">
                 Submit a component
               </Link>
             </div>
@@ -215,7 +216,7 @@ export default function MyMarketplace() {
             <div className="empty-icon">⇪</div>
             <h3>No submissions yet</h3>
             <p className="muted">Share your module, widget or connector with the community.</p>
-            <Link to="/submit" className="btn btn-primary">
+            <Link to={routes.submit} className="btn btn-primary">
               Submit a component
             </Link>
           </div>

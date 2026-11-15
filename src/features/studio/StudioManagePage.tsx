@@ -11,13 +11,15 @@ import {
   type ReleaseListItem,
   type ReleaseType,
   type StudioRelease,
-} from '../../shared/studio';
-import { ApiError, createRelease, deleteRelease, getRelease, listReleases, updateRelease } from '../api/studio';
-import { useApiQuery } from '../hooks/useApiQuery';
-import { longDate } from '../lib/studioFormat';
-import { useStore } from '../store';
-import { Icon } from '../components/icons';
-import { Modal, SkeletonRows, TypeBadge } from '../components/studio-ui';
+} from '../../../shared/studio';
+import { ApiError, createRelease, deleteRelease, getRelease, listReleases, updateRelease } from './api';
+import { useApiQuery } from './useApiQuery';
+import { longDate } from '../../lib/dates';
+import { useStore } from '../../store';
+import { Icon } from '../../components/icons';
+import { Modal } from '../../components/Modal';
+import { SkeletonRows, TypeBadge } from './ui';
+import { routes } from '../../lib/routes';
 
 const PAGE_SIZE = 20;
 
@@ -499,7 +501,7 @@ function DeleteDialog({
 type DialogState =
   { kind: 'create' } | { kind: 'edit'; version: string } | { kind: 'delete'; release: ReleaseListItem } | null;
 
-export default function StudioManage() {
+export default function StudioManagePage() {
   const { notify } = useStore();
   const [qInput, setQInput] = useState('');
   const [q, setQ] = useState('');
@@ -530,7 +532,7 @@ export default function StudioManage() {
   return (
     <div className="manage">
       <nav className="breadcrumbs">
-        <Link to="/studio">Studio</Link> / <span>Manage releases</span>
+        <Link to={routes.studio}>Studio</Link> / <span>Manage releases</span>
       </nav>
       <div className="manage-head">
         <div>

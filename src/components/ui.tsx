@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { Icon } from './icons';
 import type { Component, SubmissionStatus, SupportLevel } from '../types';
+import { routes } from '../lib/routes';
 
 const STAR = 'M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z';
 
@@ -69,12 +70,12 @@ export function FavoriteButton({
   withLabel?: boolean;
 }) {
   const { favorites, toggleFavorite } = useStore();
-  const on = favorites.includes(c.id);
+  const isFavorite = favorites.includes(c.id);
   return (
     <button
-      className={`fav-btn ${on ? 'on' : ''} ${className}`}
-      aria-pressed={on}
-      title={on ? 'Remove from favorites' : 'Add to favorites'}
+      className={`fav-btn ${isFavorite ? 'on' : ''} ${className}`}
+      aria-pressed={isFavorite}
+      title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -84,19 +85,19 @@ export function FavoriteButton({
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path
           d="M8 13.5s-5.5-3.2-5.5-7A2.9 2.9 0 0 1 8 4.8a2.9 2.9 0 0 1 5.5 1.7c0 3.8-5.5 7-5.5 7z"
-          fill={on ? 'currentColor' : 'none'}
+          fill={isFavorite ? 'currentColor' : 'none'}
           stroke="currentColor"
           strokeWidth="1.3"
         />
       </svg>
-      {withLabel && <span>{on ? 'Favorited' : 'Favorite'}</span>}
+      {withLabel && <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>}
     </button>
   );
 }
 
 export function ComponentCard({ c }: { c: Component }) {
   return (
-    <Link to={`/components/${c.slug}`} className="card">
+    <Link to={routes.component(c.slug)} className="card">
       <div className="card-body">
         <div className="card-text">
           <h3 className="card-title">{c.name}</h3>
