@@ -1,0 +1,60 @@
+/* Field.css */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field > label {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.field .check {
+  font-weight: 400;
+}
+
+.field-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.field-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.char-count {
+  color: var(--text-weak);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.char-count.over {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.field.has-error input:not([type='checkbox']):not([type='file']),
+.field.has-error select,
+.field.has-error textarea {
+  border-color: var(--danger);
+}
+
+.field.has-error input[type='file'] {
+  outline: 1px solid var(--danger);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+input[type='file'] {
+  height: auto;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+}

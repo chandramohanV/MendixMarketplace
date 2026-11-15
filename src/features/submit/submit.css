@@ -1,0 +1,96 @@
+/* submit.css */
+
+.stepper {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  gap: 8px;
+}
+
+.stepper li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-weak);
+  font-weight: 600;
+}
+
+.stepper li span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.stepper li.active {
+  color: var(--text-strong);
+}
+
+.stepper li.active span {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.stepper li.done span {
+  background: var(--text-strong);
+  color: #fff;
+  border-color: var(--text-strong);
+}
+
+.form-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.review-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.review-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.review-section-head h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.review-section .facts dd {
+  overflow-wrap: anywhere;
+}
+
+.review-section .facts {
+  grid-template-columns: 140px minmax(0, 1fr);
+}
+
+@media (max-width: 640px) {
+  .stepper li {
+    font-size: 0;
+    gap: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 720px) {
+  .review-section .facts {
+    grid-template-columns: 1fr;
+    gap: 2px 0;
+  }
+  .review-section .facts dd {
+    margin-bottom: 8px;
+  }
+}

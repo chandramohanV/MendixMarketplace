@@ -1,0 +1,56 @@
+/* my-marketplace.css */
+
+.submissions-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.submissions-head p {
+  margin: 0;
+}
+
+.actions-cell .actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.submissions-table td {
+  vertical-align: middle;
+}
+
+@media (max-width: 720px) {
+  .stack-table thead {
+    display: none;
+  }
+  .stack-table,
+  .stack-table tbody,
+  .stack-table tr,
+  .stack-table td {
+    display: block;
+    width: 100%;
+  }
+  .stack-table tr {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  .stack-table td {
+    border: 0;
+    padding: 3px 0;
+  }
+  .stack-table td[data-label]:not([data-label='Component'])::before {
+    content: attr(data-label) ': ';
+    color: var(--text-weak);
+  }
+  .actions-cell {
+    padding-top: 8px !important;
+  }
+  .actions-cell .actions {
+    justify-content: flex-start;
+  }
+}

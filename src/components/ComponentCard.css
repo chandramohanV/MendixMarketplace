@@ -1,0 +1,136 @@
+/* ComponentCard.css */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 16px;
+  color: var(--text);
+  text-decoration: none !important;
+  min-height: 172px;
+  transition: box-shadow 0.15s;
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+.card:hover .card-title {
+  color: var(--link);
+}
+
+.card-body {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 16px;
+  margin: 0 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-publisher {
+  font-size: 12px;
+  color: var(--text-weak);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-desc {
+  font-size: 12px;
+  line-height: 18px;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  min-height: 16px;
+}
+
+.c-icon {
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 60%, #0a1324));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.fav-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fav-btn:hover {
+  color: #d6336c;
+  background: var(--hover);
+}
+
+.fav-btn.on {
+  color: #d6336c;
+}
+
+.fav-btn.btn {
+  color: var(--text-strong);
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+
+.fav-btn.btn svg {
+  color: #d6336c;
+}
+
+@media (max-width: 1280px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}

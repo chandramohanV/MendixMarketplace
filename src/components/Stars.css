@@ -1,0 +1,20 @@
+/* Stars.css */
+
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.star-count {
+  color: var(--text-weak);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.page .reviews .review .stars-inline,
+.stars-inline {
+  color: var(--star);
+  letter-spacing: 1px;
+}

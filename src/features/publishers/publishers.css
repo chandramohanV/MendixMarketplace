@@ -1,0 +1,55 @@
+/* publishers.css */
+
+.publisher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.publisher-card {
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.publisher-card h3 {
+  margin: 0;
+}
+
+.verified {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 8px;
+  vertical-align: 2px;
+  margin-left: 4px;
+}
+
+.pub-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.pub-stats div {
+  display: flex;
+  flex-direction: column;
+}
+
+.pub-stats b {
+  color: var(--text-strong);
+  font-size: 16px;
+}
+
+.pub-stats span {
+  font-size: 11px;
+  color: var(--text-weak);
+}

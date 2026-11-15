@@ -1,0 +1,36 @@
+/* Pagination.css */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 32px;
+}
+
+.pagination button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  background: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-strong);
+  display: grid;
+  place-items: center;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.pagination button.active {
+  border-color: var(--border-strong);
+  font-weight: 600;
+}
+
+.pagination button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

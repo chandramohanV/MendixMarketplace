@@ -1,0 +1,53 @@
+/* Badges.css */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--active);
+  color: var(--text-strong);
+}
+
+.badge-platform {
+  background: var(--badge-platform-bg);
+  color: var(--badge-platform);
+}
+
+.badge-partner {
+  background: var(--badge-partner-bg);
+  color: #fff;
+}
+
+.badge-community {
+  background: #ebe7f7;
+  color: #5b3fa8;
+}
+
+.badge-deprecated {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.badge-status-pending {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.badge-status-published {
+  background: var(--badge-platform-bg);
+  color: var(--badge-platform);
+}
+
+.badge-status-rejected {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
