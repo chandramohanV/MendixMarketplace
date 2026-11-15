@@ -175,7 +175,7 @@ export default function Browse() {
                   <h2>Scale with Studio</h2>
                   <p>Boost up the development process using reusable components.</p>
                 </div>
-                <button className="btn btn-primary" onClick={(e) => e.preventDefault()}>Download Studio</button>
+                <Link to="/studio" className="btn btn-primary">Download Studio</Link>
                 <button className="btn btn-secondary filters-toggle" onClick={() => setFiltersOpen(true)}><Icon name="filter" /> Filters</button>
               </div>
               {sections.map((s) => <Section key={s.title} {...s} />)}

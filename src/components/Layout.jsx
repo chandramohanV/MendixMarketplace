@@ -52,9 +52,9 @@ function Sidebar({ open, collapsed, onCollapse }) {
       </nav>
       <div className="nav-sep" />
       <nav className="nav-group">
-        <a className="nav-item" href="#studio" onClick={(e) => e.preventDefault()} title="Download Studio">
+        <NavLink to="/studio" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Download Studio">
           <span className="studio-mark">bx</span><span className="nav-text">Download Studio</span>
-        </a>
+        </NavLink>
         {item('/guidelines', 'book', 'Guidelines')}
       </nav>
       <button className="nav-item collapse-btn" onClick={onCollapse} title={collapsed ? 'Expand menu' : 'Collapse menu'}>
@@ -79,7 +79,9 @@ export function Footer() {
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const isDetail = useMatch('/components/:slug');
+  const isComponentPage = useMatch('/components/:slug');
+  const isStudioPage = useMatch('/studio');
+  const isDetail = isComponentPage || isStudioPage; // full-width pages without the sidebar
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 

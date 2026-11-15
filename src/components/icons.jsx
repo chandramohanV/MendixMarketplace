@@ -20,6 +20,14 @@ const P = {
   filter: <path d="M2.5 3h11L9.3 8.3v4.2l-2.6 1V8.3z" />,
   share: <><circle cx="4" cy="8" r="1.8" /><circle cx="12" cy="4" r="1.8" /><circle cx="12" cy="12" r="1.8" /><path d="m5.6 7.2 4.8-2.4M5.6 8.8l4.8 2.4" /></>,
   partner: <path fill="currentColor" stroke="none" d="M2 12V6l3 2 3-4 3 4 3-2v6z" />,
+  windows: <path fill="currentColor" stroke="none" d="M1.5 3.2 6.8 2.5v5H1.5zM7.6 2.4 14.5 1.5v6H7.6zM1.5 8.3h5.3v5.1l-5.3-.7zM7.6 8.3h6.9v6.2l-6.9-.9z" />,
+  apple: <path fill="currentColor" stroke="none" d="M11.2 8.5c0-1.6 1.3-2.3 1.4-2.4-.8-1.1-1.9-1.3-2.3-1.3-1-.1-1.9.6-2.4.6s-1.3-.6-2.1-.5c-1.1 0-2.1.6-2.6 1.6-1.1 2-.3 4.9.8 6.5.5.8 1.1 1.6 1.9 1.6.8 0 1-.5 2-.5s1.2.5 2 .5c.8 0 1.4-.8 1.9-1.6.6-.9.8-1.7.8-1.8 0 0-1.4-.6-1.4-2.7zM9.6 3.7c.4-.5.7-1.2.6-1.9-.6 0-1.4.4-1.8.9-.4.4-.7 1.1-.6 1.8.7.1 1.4-.3 1.8-.8z" />,
+  play: <path fill="currentColor" stroke="none" d="M5 3.2v9.6L13 8z" />,
+  doc: <><path d="M4 1.5h5l3.5 3.5v9.5H4z" /><path d="M9 1.5V5h3.5" /></>,
+  sort: <><path d="M5 13V3M2.5 5.5 5 3l2.5 2.5" /><path d="M11 3v10M8.5 10.5 11 13l2.5-2.5" /></>,
+  first: <path d="m8 3-5 5 5 5M13 3l-5 5 5 5" />,
+  last: <path d="m3 3 5 5-5 5M8 3l5 5-5 5" />,
+  sparkle: <path d="M8 1.5l1.4 4.1 4.1 1.4-4.1 1.4L8 12.5 6.6 8.4 2.5 7l4.1-1.4zM13 11l.6 1.4L15 13l-1.4.6L13 15l-.6-1.4L11 13l1.4-.6z" />,
 };
 
 export function Icon({ name, size = 16, className = '' }) {
