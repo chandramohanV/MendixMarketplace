@@ -1,22 +1,15 @@
 // Manage releases: create / edit / delete through the UI, validation (client and server),
 // duplicate version, LATEST promotion on /studio, delete-LATEST refusal, API-down state, mobile.
+import { apiClient, fill as fillInput, setNativeValue } from './helpers.mjs';
+
 const NEW = '11.17.1';
 
 export default async function studioManage(t) {
   const { check, text, count, clickText, sleep, go, waitFor } = t;
   const page = await t.newPage();
-  const apiGet = async (p) => {
-    const r = await fetch(t.api + p);
-    return { status: r.status, body: r.status === 204 ? null : await r.json() };
-  };
-  const apiSend = async (method, p, body) => {
-    const r = await fetch(t.api + p, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return r.status;
-  };
+  const api = apiClient(t.api);
+  const apiGet = api.get;
+  const apiSend = api.send;
   const startLatest = (await apiGet('/summary')).body.latest.version;
   const TOTAL = (await apiGet('/releases?pageSize=1')).body.total;
 
@@ -29,25 +22,8 @@ export default async function studioManage(t) {
     return waitFor(async () => !(await status()).includes('Loading') && (await count(page, '.skeleton-row')) === 0);
   };
   const dialogOpen = async () => (await count(page, '[role=dialog]')) === 1;
-  const setValue = (sel, value) =>
-    page.$eval(
-      sel,
-      (el, v) => {
-        const proto = el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
-        Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, v);
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      },
-      value,
-    );
-  const fill = async (sel, value) => {
-    await page.$eval(sel, (el) => {
-      el.focus();
-      el.select?.();
-    });
-    await page.keyboard.press('Backspace');
-    await page.type(sel, value);
-  };
+  const setValue = (selector, value) => setNativeValue(page, selector, value);
+  const fill = (selector, value) => fillInput(page, selector, value);
   const submitForm = () => page.click('.release-form button[type=submit]');
 
   // Request interception lets the tests simulate an unreachable API or a crafted server response.

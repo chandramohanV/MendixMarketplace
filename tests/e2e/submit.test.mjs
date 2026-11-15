@@ -1,10 +1,12 @@
 // Contribute flow: validation, drafts, review/edit, submit, pending → published, edit, withdraw, mobile.
+import { fill as fillInput, readStorage, setFile as setFileInput } from './helpers.mjs';
+
 const NAME = 'E2E Test Widget';
 const NAME_PRO = 'E2E Test Widget Pro';
 const SHORT = 'A widget created by the end-to-end test suite.';
 
 export default async function submit(t) {
-  const { check, text, count, clickText, sleep, go } = t;
+  const { check, text, count, clickText, sleep, go, waitFor } = t;
   const page = await t.newPage();
 
   const fieldError = (k) => page.$eval(`#f-${k}-error`, (e) => e.innerText).catch(() => null);
@@ -13,38 +15,12 @@ export default async function submit(t) {
   const currentStep = () =>
     page.$eval('.stepper li[aria-current="step"]', (e) => e.innerText.replace(/^\d+|✓/, '').trim());
   const next = () => page.click('form.form button[type=submit]');
-  const fill = async (sel, value) => {
-    await page.$eval(sel, (el) => {
-      el.focus();
-      el.select();
-    });
-    await page.keyboard.press('Backspace');
-    if (value) await page.type(sel, value);
-  };
-  const setFile = (name, size) =>
-    page.evaluate(
-      (fileName, fileSize) => {
-        const input = document.querySelector('#f-file');
-        const dt = new DataTransfer();
-        dt.items.add(new File([new Uint8Array(fileSize)], fileName));
-        input.files = dt.files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      },
-      name,
-      size,
-    );
+  const fill = (selector, value) => fillInput(page, selector, value);
+  const setFile = (fileName, size) => setFileInput(page, '#f-file', fileName, size);
   // Badges are uppercased with CSS and innerText reflects that, so compare case-insensitively.
   const has = async (sel, needle) => (await text(page, sel)).toLowerCase().includes(needle.toLowerCase());
-  const storage = (key) => page.evaluate((k) => JSON.parse(localStorage.getItem(k) || 'null'), key);
+  const storage = (key) => readStorage(page, key);
   const submissions = async () => (await storage('mp.submissions')) || [];
-  const waitFor = async (fn, timeout = 4000) => {
-    const end = Date.now() + timeout;
-    while (Date.now() < end) {
-      if (await fn()) return true;
-      await sleep(100);
-    }
-    return false;
-  };
 
   // Fresh state; hold submissions in "pending" so checks don't race the auto-publish timer.
   await go(page, '/submit');

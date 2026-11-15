@@ -1,9 +1,11 @@
+import { apiClient } from './helpers.mjs';
+
 // Studio download page: hero, release types, release table (search, filter, sort, paging),
 // release-notes dialog, downloads, navigation and mobile layout. Expected values come from the API.
 export default async function studio(t) {
   const page = await t.newPage();
   const { check, text, count, clickText, sleep, go, waitFor } = t;
-  const apiJson = async (p) => (await fetch(t.api + p)).json();
+  const apiJson = apiClient(t.api).json;
   const summary = await apiJson('/summary');
   const TOTAL = (await apiJson('/releases?pageSize=1')).total;
   const LATEST = summary.latest.version;
