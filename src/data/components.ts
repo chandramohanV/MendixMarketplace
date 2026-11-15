@@ -69,7 +69,6 @@ export const INDUSTRIES: string[] = [
   'Healthcare',
   'Public Sector',
 ];
-export const LICENSES: LicenseModel[] = ['Free', 'Paid', 'Free trial'];
 export const LICENSE_TYPES: string[] = ['Apache V2', 'MIT', 'Commercial', 'BSD', 'GPL v3'];
 
 const PUBLISHERS: Publisher[] = [
@@ -397,23 +396,3 @@ function shortDescription(type: ComponentType, name: string, category: string): 
 
 export const COMPONENTS = buildComponents();
 export const PUBLISHER_LIST = PUBLISHERS;
-
-/** Looks up a catalog component only; use `useCatalog()` to include user submissions. */
-export function getComponent(slug: string): Component | undefined {
-  return COMPONENTS.find((c) => c.slug === slug);
-}
-
-export function formatNumber(n: number): string {
-  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  return String(n);
-}
-
-export function formatDate(iso: string): string {
-  return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-}

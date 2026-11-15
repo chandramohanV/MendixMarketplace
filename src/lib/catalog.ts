@@ -1,19 +1,9 @@
-// The live catalog: dummy components plus the user's submissions.
-import { useMemo } from 'react';
-import { COLORS, COMPONENTS, ICONS, PLATFORM_VERSIONS } from './data/components';
-import { useStore } from './store';
-import type { Component, Submission } from './types';
+// Pure catalog logic: the dummy catalog combined with the user's submissions (see store/useCatalog).
+import { COLORS, ICONS, PLATFORM_VERSIONS } from '../data/components';
+import type { Component, Submission } from '../types';
+import { hashString } from './hash';
 
-export const SUBMITTER_NAME = 'Demo User';
-
-function hash(s: string): number {
-  let h = 2166136261;
-  for (const ch of s) {
-    h ^= ch.charCodeAt(0);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
+const SUBMITTER_NAME = 'Demo User';
 
 /** Turns a submission into a marketplace component (used for detail pages and listings). */
 export function submissionToComponent(s: Submission): Component {
@@ -41,8 +31,8 @@ export function submissionToComponent(s: Submission): Component {
     compatible: minIndex >= 0 ? PLATFORM_VERSIONS.slice(0, minIndex + 1) : [s.minPlatform],
     updated: date,
     created: s.submittedAt.slice(0, 10),
-    color: COLORS[hash(s.name) % COLORS.length],
-    icon: ICONS[hash(s.slug) % ICONS.length],
+    color: COLORS[hashString(s.name) % COLORS.length],
+    icon: ICONS[hashString(s.slug) % ICONS.length],
     featured: false,
     tags: [s.type.toLowerCase(), s.category.toLowerCase(), 'community'],
     short: s.short,
@@ -55,7 +45,7 @@ export function submissionToComponent(s: Submission): Component {
   };
 }
 
-const norm = (name: string) => name.trim().toLowerCase();
+const normalizeName = (name: string) => name.trim().toLowerCase();
 
 export interface Catalog {
   /** Everything public: the dummy catalog plus published submissions. */
@@ -67,23 +57,27 @@ export interface Catalog {
   isNameTaken: (name: string, exceptSubmissionId?: number) => boolean;
 }
 
-export function useCatalog(): Catalog {
-  const { submissions } = useStore();
-  return useMemo(() => {
-    const own = submissions.map(submissionToComponent);
-    const components = [...COMPONENTS, ...own.filter((c) => c.status === 'published')];
-    const all = [...COMPONENTS, ...own];
-    return {
-      components,
-      findBySlug: (slug) => all.find((c) => c.slug === slug),
-      findById: (id) => all.find((c) => c.id === id),
-      isNameTaken: (name, exceptSubmissionId) => {
-        const n = norm(name);
-        return (
-          COMPONENTS.some((c) => norm(c.name) === n) ||
-          submissions.some((s) => s.id !== exceptSubmissionId && norm(s.name) === n)
-        );
-      },
-    };
-  }, [submissions]);
+/** Case-insensitive name check across the catalog and all submissions (except the one being edited). */
+export function isNameTaken(
+  name: string,
+  catalog: Component[],
+  submissions: Submission[],
+  exceptSubmissionId?: number,
+): boolean {
+  const n = normalizeName(name);
+  return (
+    catalog.some((c) => normalizeName(c.name) === n) ||
+    submissions.some((s) => s.id !== exceptSubmissionId && normalizeName(s.name) === n)
+  );
+}
+
+export function buildCatalog(catalog: Component[], submissions: Submission[]): Catalog {
+  const own = submissions.map(submissionToComponent);
+  const all = [...catalog, ...own];
+  return {
+    components: [...catalog, ...own.filter((c) => c.status === 'published')],
+    findBySlug: (slug) => all.find((c) => c.slug === slug),
+    findById: (id) => all.find((c) => c.id === id),
+    isNameTaken: (name, exceptSubmissionId) => isNameTaken(name, catalog, submissions, exceptSubmissionId),
+  };
 }

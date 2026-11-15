@@ -8,7 +8,7 @@ import { createServer } from 'vite';
 import { launch } from 'puppeteer-core';
 import { startServer } from '../../server/server.ts';
 
-export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 export function findBrowser() {
   const candidates = [

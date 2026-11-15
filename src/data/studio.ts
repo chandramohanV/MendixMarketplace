@@ -1,5 +1,6 @@
 // Deterministic dummy release history; the Studio API seeds its data file from RELEASES.
 import { compareVersionsDesc, type ReleaseType, type StudioRelease } from '../../shared/studio';
+import { hashString } from '../lib/hash';
 
 type SupportType = Extract<ReleaseType, 'LTS' | 'MTS'>;
 type ReleaseNotes = StudioRelease['notes'];
@@ -54,17 +55,8 @@ const NOTE_POOL = {
   ],
 };
 
-function hash(s: string): number {
-  let h = 2166136261;
-  for (const ch of s) {
-    h ^= ch.charCodeAt(0);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
 function notesFor(version: string, patch: number): ReleaseNotes {
-  const h = hash(version);
+  const h = hashString(version);
   const take = (pool: string[], n: number, offset: number) =>
     Array.from({ length: n }, (_, i) => pool[(h + offset + i * 7) % pool.length]).filter(
       (v, i, all) => all.indexOf(v) === i,

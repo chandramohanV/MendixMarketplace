@@ -45,7 +45,7 @@ const NoteItemSchema = z
   .trim()
   .min(1, 'Note items cannot be empty.')
   .max(LIMITS.itemLength, `Note items can be at most ${LIMITS.itemLength} characters.`);
-export const NotesSchema = z
+const NotesSchema = z
   .record(
     z
       .string()

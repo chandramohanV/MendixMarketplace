@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
-import { StoreProvider } from './store';
+import { AppProviders } from './store/AppProviders';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('index.html is missing the #root element');
@@ -11,9 +11,9 @@ if (!rootElement) throw new Error('index.html is missing the #root element');
 createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
-      <StoreProvider>
+      <AppProviders>
         <App />
-      </StoreProvider>
+      </AppProviders>
     </BrowserRouter>
   </StrictMode>,
 );

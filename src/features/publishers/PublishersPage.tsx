@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
-import { COMPONENTS, PUBLISHER_LIST, formatNumber } from '../../data/components';
+import { COMPONENTS, PUBLISHER_LIST } from '../../data/components';
 import { routes } from '../../lib/routes';
+import { formatNumber } from '../../lib/format';
+import { initials } from '../../lib/text';
 
 export default function PublishersPage() {
   const rows = PUBLISHER_LIST.map((p) => {
@@ -21,13 +23,7 @@ export default function PublishersPage() {
       <div className="publisher-grid">
         {rows.map((p) => (
           <Link key={p.name} to={routes.explore({ publisher: p.name })} className="card publisher-card">
-            <div className="avatar lg">
-              {p.name
-                .split(' ')
-                .map((w) => w[0])
-                .slice(0, 2)
-                .join('')}
-            </div>
+            <div className="avatar lg">{initials(p.name)}</div>
             <h3>
               {p.name}{' '}
               {p.verified && (

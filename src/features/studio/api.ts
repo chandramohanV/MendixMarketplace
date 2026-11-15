@@ -8,7 +8,6 @@ import {
   type CreateReleaseInput,
   type FieldError,
   type ListQuery,
-  type PatchReleaseInput,
   type ReleaseList,
   type StudioRelease,
   type StudioSummary,
@@ -76,8 +75,6 @@ export const createRelease = (input: CreateReleaseInput): Promise<StudioRelease>
   request('/releases', StudioReleaseSchema, { method: 'POST', body: json(input) });
 export const updateRelease = (version: string, input: UpdateReleaseInput): Promise<StudioRelease> =>
   request(`/releases/${enc(version)}`, StudioReleaseSchema, { method: 'PUT', body: json(input) });
-export const patchRelease = (version: string, input: PatchReleaseInput): Promise<StudioRelease> =>
-  request(`/releases/${enc(version)}`, StudioReleaseSchema, { method: 'PATCH', body: json(input) });
 export async function deleteRelease(version: string): Promise<void> {
   await request(`/releases/${enc(version)}`, null, { method: 'DELETE' });
 }

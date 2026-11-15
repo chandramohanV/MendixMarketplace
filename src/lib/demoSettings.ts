@@ -2,7 +2,7 @@ import { STORAGE_KEYS } from './storageKeys';
 // Demo-only knobs. The automated tests use these to make timing deterministic.
 
 /** Default delay before the demo reviewer auto-publishes a pending submission. */
-export const AUTO_PUBLISH_MS = 5000;
+const AUTO_PUBLISH_MS = 5000;
 
 /**
  * Auto-publish delay in ms. Can be overridden with

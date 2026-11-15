@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
-import { useStore } from '../store';
+import { useFavorites } from '../store/contexts';
 import { Icon, type IconName } from './icons';
 import { routes } from '../lib/routes';
 
@@ -69,7 +69,7 @@ function NavItem({
 }
 
 function Sidebar({ open, collapsed, onCollapse }: { open: boolean; collapsed: boolean; onCollapse: () => void }) {
-  const { favorites } = useStore();
+  const { favorites } = useFavorites();
   const { pathname } = useLocation();
   const exploreActive = pathname === routes.home || pathname.startsWith(routes.explore());
   return (
@@ -106,7 +106,7 @@ function Sidebar({ open, collapsed, onCollapse }: { open: boolean; collapsed: bo
   );
 }
 
-export function Footer() {
+function Footer() {
   return (
     <footer className="footer">
       <span>© BloxMarket demo 2026. All data is fictional.</span>
