@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test:api": "tsx --test tests/api/studio.api.test.ts",
     "test:e2e": "tsx tests/e2e/run.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "visual:baseline": "tsx tests/visual/visual.mjs baseline",
+    "visual:compare": "tsx tests/visual/visual.mjs compare"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.8",
@@ -30,6 +32,9 @@
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.7",
     "oxlint": "^1.90.0",
+    "pixelmatch": "^8.0.0",
+    "pngjs": "^7.0.0",
+    "prettier": "^3.10.1",
     "puppeteer-core": "^25.17.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
