@@ -1,6 +1,5 @@
-// File-backed release store: all mutations are serialized and written atomically.
-import fs from 'node:fs/promises';
-import path from 'node:path';
+// Release store: all mutations are serialized and saved through a pluggable backend
+// (a JSON file under Node — see file-persistence.ts — or Workers KV on Cloudflare).
 import type { z } from 'zod';
 import {
   compareVersionsDesc,
@@ -39,7 +38,14 @@ export class HttpError extends Error {
 
 const notFound = (version: string) => new HttpError(404, 'not_found', `Release ${version} was not found.`);
 const withoutNotes = ({ notes: _notes, ...rest }: StudioRelease): ReleaseListItem => rest;
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Where the release list lives. `load` returns null when nothing has been stored yet. */
+export interface Persistence {
+  /** Human-readable location, for log messages. */
+  readonly location: string;
+  load(): Promise<StudioRelease[] | null>;
+  save(data: StudioRelease[]): Promise<void>;
+}
 
 type Comparator = (a: StudioRelease, b: StudioRelease) => number;
 const SORTS: Record<ListParams['sort'], Comparator> = {
@@ -51,22 +57,23 @@ const SORTS: Record<ListParams['sort'], Comparator> = {
 export class ReleaseStore {
   private releases: StudioRelease[] = [];
   private queue: Promise<unknown> = Promise.resolve();
-  private tmpCounter = 0;
 
-  private constructor(readonly file: string) {}
+  private constructor(private readonly persistence: Persistence) {}
 
-  /** Opens (and seeds on first run) the store in `dataDir`. */
-  static async open(dataDir: string): Promise<ReleaseStore> {
-    await fs.mkdir(dataDir, { recursive: true });
-    const store = new ReleaseStore(path.join(dataDir, 'releases.json'));
-    try {
-      const parsed: unknown = JSON.parse(await fs.readFile(store.file, 'utf8'));
-      if (!Array.isArray(parsed)) throw new Error('releases.json must contain an array');
-      store.releases = parsed as StudioRelease[];
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  /** Where the data is stored (for log messages). */
+  get file(): string {
+    return this.persistence.location;
+  }
+
+  /** Loads the store from `persistence`, seeding it on first run. */
+  static async load(persistence: Persistence): Promise<ReleaseStore> {
+    const store = new ReleaseStore(persistence);
+    const stored = await persistence.load();
+    if (stored) {
+      store.releases = stored;
+    } else {
       store.releases = buildSeed();
-      await store.persist(store.releases);
+      await persistence.save(store.releases);
     }
     return store;
   }
@@ -220,31 +227,12 @@ export class ReleaseStore {
     const run = this.queue.then(async () => {
       const draft = structuredClone(this.releases);
       const result = fn(draft);
-      await this.persist(draft);
+      await this.persistence.save(draft);
       this.releases = draft;
       return structuredClone(result);
     });
     this.queue = run.catch(() => undefined); // keep the queue alive after a rejected write
     return run;
-  }
-
-  private async persist(data: StudioRelease[]): Promise<void> {
-    const tmp = `${this.file}.${process.pid}.${++this.tmpCounter}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(data, null, 1));
-    // rename() replaces the target atomically; retry briefly if Windows has the file locked.
-    for (let attempt = 0; ; attempt++) {
-      try {
-        await fs.rename(tmp, this.file);
-        return;
-      } catch (e) {
-        const code = (e as NodeJS.ErrnoException).code;
-        if (attempt >= 5 || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) {
-          await fs.rm(tmp, { force: true });
-          throw e;
-        }
-        await sleep(20 * (attempt + 1));
-      }
-    }
   }
 }
 

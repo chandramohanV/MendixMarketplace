@@ -25,3 +25,6 @@ dist-ssr
 
 # Studio API data (seeded on first run)
 server/data/
+
+# Wrangler local state
+.wrangler/

@@ -99,6 +99,8 @@ npm run lint      # oxlint
 npm run typecheck # tsc --noEmit (strict) — src, server, shared and API tests
 npm run test:api  # API tests (node:test)
 npm run test:e2e  # end-to-end browser tests
+npm run deploy    # build and deploy to Cloudflare (see Deploying to Cloudflare)
+npm run cf:dev    # run the Cloudflare Worker build locally
 ```
 
 The project is migrating to TypeScript incrementally (`allowJs`): the data model, store, catalog, shared UI, the Studio API, and the Explore, Detail, Studio, Studio Manage, Submit and My Marketplace pages are `.ts`/`.tsx`; the remaining pages are still `.jsx`. Shared domain types live in `src/types.ts`.
@@ -108,7 +110,7 @@ The project is migrating to TypeScript incrementally (`allowJs`): the data model
 A small REST API for the releases shown on `/studio`, in `server/` (Hono, run by `tsx`). Request and response shapes are Zod schemas in `shared/studio.ts`, shared with the browser client in `src/api/studio.ts`, and every client response is validated against them.
 
 - **Port:** `5174` (`PORT` to change). In development, Vite proxies `/api` to it (`API_URL` to change the target).
-- **Data:** `server/data/releases.json` (gitignored; `DATA_DIR` to change). It is seeded from `src/data/studio.js` on first run; `npm run api:reset` reseeds it. Writes are serialized and atomic (temp file + rename).
+- **Data:** `server/data/releases.json` (gitignored; `DATA_DIR` to change). It is seeded from `src/data/studio.js` on first run; `npm run api:reset` reseeds it. Writes are serialized and atomic (temp file + rename). On Cloudflare, the same data lives in Workers KV instead (see [Deploying to Cloudflare](#deploying-to-cloudflare)).
 - **CORS:** only the Vite origin (`http://localhost:5173`; `CORS_ORIGIN` takes a comma-separated list).
 - **No authentication.** Anyone who can reach the API can create, change and delete releases. This is a demo; put real auth in front of it before exposing it anywhere.
 
@@ -195,6 +197,73 @@ If the browser isn't found automatically, point it at one:
 BROWSER_PATH="/path/to/chrome" npm run test:e2e
 ```
 
+## Deploying to Cloudflare
+
+The app runs on the Cloudflare Workers **free plan** as a single Worker:
+
+- **Live URL:** https://component-marketplace.component-marketplace.workers.dev
+- **Static app:** the Vite build in `dist/` is served as Workers static assets. Client-side routes such as `/studio` fall back to `index.html`.
+- **Studio API:** `/api/*` runs `server/worker.ts`, which uses the same Hono app as local dev (`server/app.ts`).
+- **Data:** release data is stored in the Workers KV namespace `component-marketplace-studio-kv` (binding `STUDIO_KV`, key `releases`), not in a file. It is seeded from `src/data/studio.js` on the first request.
+- **Config:** everything is in `wrangler.jsonc`, including the account ID.
+
+### Deploying a new change
+
+1. Make your change and check it locally:
+
+   ```bash
+   npm run dev     # try it at http://localhost:5173
+   npm run check   # lint, format, typecheck, build, API and e2e tests
+   ```
+
+2. Deploy:
+
+   ```bash
+   npm run deploy  # = npm run build && wrangler deploy
+   ```
+
+   This rebuilds `dist/`, uploads the app and the Worker, and prints the live URL. The new version is live within a few seconds.
+
+3. Open the live URL and check the change.
+
+4. Commit and push as usual. Deploying does not depend on git; it uploads whatever is in your working folder.
+
+Stored release data is **kept** across deploys. A deploy never resets KV.
+
+### First time on a new machine
+
+```bash
+npm install
+npx wrangler login   # opens the browser; sign in to the Cloudflare account and click Allow
+npx wrangler whoami  # should show the account
+```
+
+The login is saved, so you only do this once per machine. If `npm run deploy` later says you are not authenticated, run `npx wrangler login` again.
+
+### Useful commands
+
+| Task                                         | Command                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------ |
+| Run the production Worker locally (local KV) | `npm run cf:dev`, then open http://localhost:8787                  |
+| Stream live logs and errors                  | `npx wrangler tail`                                                |
+| List recent deployments                      | `npx wrangler deployments list`                                    |
+| Roll back to the previous version            | `npx wrangler rollback` (or `npx wrangler rollback <version-id>`)  |
+| Reset live release data to the seed          | `npx wrangler kv key delete releases --binding STUDIO_KV --remote` |
+| Look at the live release data                | `npx wrangler kv key get releases --binding STUDIO_KV --remote`    |
+
+`npm run cf:dev` needs the `workerd` runtime. If npm held back its install script, allow it once with `npm install-scripts approve workerd`, then run `npm install` again.
+
+Rolling back changes only the code. It does not undo changes to the release data.
+
+### Free plan limits and caveats
+
+- **Workers:** 100,000 API requests per day. Static asset requests are free and don't count.
+- **KV:** 100,000 reads and 1,000 writes per day. Each API request does one read; each create, edit or delete does one write.
+- **Eventual consistency:** KV can take up to about 60 seconds to show an edit to visitors in other regions.
+- **No authentication:** anyone with the URL can change releases (see [Studio Releases API](#studio-releases-api)). To restrict it, put the site behind Cloudflare Access (Zero Trust; free for up to 50 users).
+
+You can see usage, logs and the KV data in the Cloudflare dashboard under **Workers & Pages → component-marketplace** and **Storage & Databases → KV**.
+
 ## Project structure
 
 ```
@@ -213,7 +282,9 @@ src/
   pages/               Explore (Browse), Detail, Studio, StudioManage, MyMarketplace, Publishers, Submit, Misc
   index.css            design tokens and all styles
 shared/studio.ts       Zod schemas, types and rules shared by the API and the client
-server/                Studio Releases API (app.ts routes, store.ts persistence + rules, server.ts, index.ts CLI)
+server/                Studio Releases API (app.ts routes, store.ts rules, file-persistence.ts JSON file storage,
+                       server.ts, index.ts CLI, worker.ts Cloudflare Worker entry with KV storage)
+wrangler.jsonc         Cloudflare Workers deployment config
 tests/api/             API tests (node:test)
 tests/e2e/             browser test runner and suites (marketplace, studio, submit, studio-manage)
 ```
