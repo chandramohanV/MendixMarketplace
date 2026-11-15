@@ -1,10 +1,12 @@
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { Icon } from './icons';
+import type { Component, SubmissionStatus, SupportLevel } from '../types';
 
 const STAR = 'M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z';
 
-export function Stars({ value, size = 14, count }) {
+export function Stars({ value, size = 14, count }: { value: number; size?: number; count?: number }) {
   return (
     <span className="stars" aria-label={`${value} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((i) => {
@@ -22,15 +24,16 @@ export function Stars({ value, size = 14, count }) {
   );
 }
 
-export function ComponentIcon({ c, size = 48 }) {
+export function ComponentIcon({ c, size = 48 }: { c: Pick<Component, 'color' | 'icon'>; size?: number }) {
+  const style = { '--c': c.color, width: size, height: size, fontSize: size * 0.42 } as CSSProperties;
   return (
-    <div className="c-icon" style={{ '--c': c.color, width: size, height: size, fontSize: size * 0.42 }}>
+    <div className="c-icon" style={style}>
       <span>{c.icon}</span>
     </div>
   );
 }
 
-export function SupportBadge({ support, long = false }) {
+export function SupportBadge({ support, long = false }: { support: SupportLevel; long?: boolean }) {
   if (support === 'Community' && !long) return null;
   const label = long ? `${support} supported` : support;
   return (
@@ -41,7 +44,13 @@ export function SupportBadge({ support, long = false }) {
   );
 }
 
-export function FavoriteButton({ c, className = '', withLabel = false }) {
+const STATUS_LABEL: Record<SubmissionStatus, string> = { pending: 'Pending review', published: 'Published', rejected: 'Rejected' };
+
+export function StatusBadge({ status }: { status: SubmissionStatus }) {
+  return <span className={`badge badge-status-${status}`}>{STATUS_LABEL[status]}</span>;
+}
+
+export function FavoriteButton({ c, className = '', withLabel = false }: { c: Pick<Component, 'id' | 'name'>; className?: string; withLabel?: boolean }) {
   const { favorites, toggleFavorite } = useStore();
   const on = favorites.includes(c.id);
   return (
@@ -57,7 +66,7 @@ export function FavoriteButton({ c, className = '', withLabel = false }) {
   );
 }
 
-export function ComponentCard({ c }) {
+export function ComponentCard({ c }: { c: Component }) {
   return (
     <Link to={`/components/${c.slug}`} className="card">
       <div className="card-body">
@@ -73,15 +82,15 @@ export function ComponentCard({ c }) {
       </div>
       <div className="card-foot">
         {c.ratingCount > 0 ? <Stars value={c.rating} count={c.ratingCount} /> : <span />}
-        <SupportBadge support={c.support} />
+        {c.status && c.status !== 'published' ? <StatusBadge status={c.status} /> : <SupportBadge support={c.support} />}
       </div>
     </Link>
   );
 }
 
-export function Pagination({ page, pages, onChange }) {
+export function Pagination({ page, pages, onChange }: { page: number; pages: number; onChange: (page: number) => void }) {
   if (pages <= 1) return null;
-  const nums = [];
+  const nums: (number | '…')[] = [];
   for (let i = 1; i <= pages; i++) {
     if (i === 1 || i === pages || Math.abs(i - page) <= 1) nums.push(i);
     else if (nums[nums.length - 1] !== '…') nums.push('…');

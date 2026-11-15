@@ -1,5 +1,7 @@
 // Deterministic dummy data for the marketplace.
-function mulberry32(a) {
+import type { Component, ComponentType, LicenseModel, Publisher, Release, Review, SupportLevel } from '../types';
+
+function mulberry32(a: number): () => number {
   return function () {
     a |= 0; a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
@@ -8,10 +10,10 @@ function mulberry32(a) {
   };
 }
 const rand = mulberry32(42);
-const pick = (arr) => arr[Math.floor(rand() * arr.length)];
+const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
 // Fisher–Yates: always consumes the same number of random values, so the
 // generated data is identical in every JS engine (a random sort comparator is not).
-const pickN = (arr, n) => {
+const pickN = <T,>(arr: readonly T[], n: number): T[] => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -19,27 +21,28 @@ const pickN = (arr, n) => {
   }
   return a.slice(0, n);
 };
-const int = (min, max) => Math.floor(rand() * (max - min + 1)) + min;
+const int = (min: number, max: number): number => Math.floor(rand() * (max - min + 1)) + min;
 
-export const TYPES = ['Module', 'Widget', 'Service', 'Solution', 'Sample', 'Starter App', 'Industry Template'];
-export const CATEGORIES = [
+export const TYPES: ComponentType[] = ['Module', 'Widget', 'Service', 'Solution', 'Sample', 'Starter App', 'Industry Template'];
+export const CATEGORIES: string[] = [
   'Data', 'Connectors', 'Artificial Intelligence', 'Authentication', 'Agents',
   'Charts', 'Communication', 'Documents', 'IoT', 'Maps & Location', 'Mobile', 'Payments', 'Security',
   'User Interface', 'Utility', 'Workflow',
 ];
-export const SUPPORT = ['Platform', 'Partner', 'Community', 'Deprecated'];
-export const SUPPORT_INFO = {
+export const SUPPORT: SupportLevel[] = ['Platform', 'Partner', 'Community', 'Deprecated'];
+export const SUPPORT_INFO: Record<SupportLevel, string> = {
   Platform: 'Supported and maintained by the platform team.',
   Partner: 'Supported by a certified technology partner.',
   Community: 'Contributed and supported by the community.',
   Deprecated: 'No longer actively maintained.',
 };
-export const PLATFORM_VERSIONS = ['11.5', '11.0', '10.24', '10.18', '10.12', '9.24'];
-export const INDUSTRIES = ['Agnostic', 'Insurance', 'Retail', 'Manufacturing Industries', 'Financial Services', 'Healthcare', 'Public Sector'];
-export const LICENSES = ['Free', 'Paid', 'Free trial'];
-export const LICENSE_TYPES = ['Apache V2', 'MIT', 'Commercial', 'BSD', 'GPL v3'];
+/** Newest first. */
+export const PLATFORM_VERSIONS: string[] = ['11.5', '11.0', '10.24', '10.18', '10.12', '9.24'];
+export const INDUSTRIES: string[] = ['Agnostic', 'Insurance', 'Retail', 'Manufacturing Industries', 'Financial Services', 'Healthcare', 'Public Sector'];
+export const LICENSES: LicenseModel[] = ['Free', 'Paid', 'Free trial'];
+export const LICENSE_TYPES: string[] = ['Apache V2', 'MIT', 'Commercial', 'BSD', 'GPL v3'];
 
-const PUBLISHERS = [
+const PUBLISHERS: Publisher[] = [
   { name: 'Northwind Labs', verified: true, country: 'Netherlands' },
   { name: 'BlueOrbit Software', verified: true, country: 'Germany' },
   { name: 'Pixelcraft Studio', verified: false, country: 'United States' },
@@ -53,7 +56,7 @@ const PUBLISHERS = [
   { name: 'Platform Team', verified: true, country: 'Netherlands' },
 ];
 
-const NAME_PARTS = {
+const NAME_PARTS: Record<ComponentType, string[]> = {
   Module: ['Excel Importer', 'Email Connector', 'Data Grid Export', 'Audit Trail', 'Encryption', 'Community Commons', 'SAML Single Sign-On', 'OIDC SSO', 'Scheduled Job Manager', 'Deep Link', 'PDF Generator', 'Feedback', 'Forgot Password', 'Data Importer', 'Process Queue', 'Unit Testing', 'Logging Toolkit', 'Model Reflection', 'Workflow Commons', 'Document Templates'],
   Widget: ['Data Grid 2', 'Rich Text Editor', 'Charts Pro', 'Calendar', 'Progress Circle', 'Star Rating', 'Image Crop', 'Signature Pad', 'Kanban Board', 'Tree View', 'Color Picker', 'Timeline', 'Badge Button', 'Range Slider', 'Maps', 'Accordion', 'Carousel', 'QR Code Scanner', 'Gantt Chart', 'Drag & Drop List'],
   Service: ['REST Consume Kit', 'Salesforce Connector', 'SAP OData Connector', 'Azure Blob Storage', 'AWS S3 Connector', 'OpenAI Connector', 'Snowflake Connector', 'Kafka Connector', 'Slack Connector', 'Twilio SMS', 'Stripe Payments', 'Google Sheets', 'Microsoft Teams', 'MQTT Client', 'Databricks', 'ServiceNow Connector', 'Jira Connector', 'Bedrock Connector'],
@@ -63,7 +66,7 @@ const NAME_PARTS = {
   'Industry Template': ['Claims Processing', 'Loan Origination', 'Patient Intake', 'Policy Administration', 'Retail Store Ops'],
 };
 
-const TYPE_CATEGORY = {
+const TYPE_CATEGORY: Record<ComponentType, string[]> = {
   Module: ['Utility', 'Security', 'Authentication', 'Data', 'Documents', 'Workflow'],
   Widget: ['User Interface', 'Charts', 'Maps & Location', 'Mobile'],
   Service: ['Connectors', 'Artificial Intelligence', 'Data', 'Communication', 'Payments', 'IoT', 'Agents'],
@@ -73,8 +76,8 @@ const TYPE_CATEGORY = {
   'Industry Template': ['Workflow', 'Documents'],
 };
 
-const COLORS = ['#264ae5', '#0595db', '#3cb33d', '#e46b2b', '#a347d0', '#d43957', '#1aa59e', '#f2a60c', '#5b6aff', '#e2367c'];
-const ICONS = ['◆', '▲', '●', '■', '★', '⬢', '⬣', '✦', '❖', '⚙', '⚡', '☁', '⌘', '◎'];
+export const COLORS = ['#264ae5', '#0595db', '#3cb33d', '#e46b2b', '#a347d0', '#d43957', '#1aa59e', '#f2a60c', '#5b6aff', '#e2367c'];
+export const ICONS = ['◆', '▲', '●', '■', '★', '⬢', '⬣', '✦', '❖', '⚙', '⚡', '☁', '⌘', '◎'];
 
 const FEATURE_POOL = [
   'Drag-and-drop configuration in the visual editor',
@@ -94,7 +97,7 @@ const FEATURE_POOL = [
 ];
 
 const REVIEWERS = ['Anna K.', 'Ravi S.', 'Jonas M.', 'Priya R.', 'Tom V.', 'Lena B.', 'Carlos D.', 'Mei L.', 'Oliver P.', 'Fatima Z.', 'Sam W.', 'Noah H.'];
-const REVIEW_TEXT = [
+const REVIEW_TEXT: [title: string, body: string][] = [
   ['Works great', 'Set it up in ten minutes and it just worked. Documentation is clear.'],
   ['Very useful', 'Saved us a lot of development time. Would love a few more configuration options.'],
   ['Solid component', 'Stable in production for months. Upgrades were painless.'],
@@ -105,26 +108,26 @@ const REVIEW_TEXT = [
   ['Excellent support', 'Publisher fixed a bug within a day of reporting it.'],
 ];
 
-function slugify(s) {
+export function slugify(s: string): string {
   return s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-function dateDaysAgo(days) {
+function dateDaysAgo(days: number): string {
   const d = new Date('2026-11-14T00:00:00Z');
   d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().slice(0, 10);
 }
 
-function buildComponents() {
-  const list = [];
+function buildComponents(): Component[] {
+  const list: Component[] = [];
   let id = 1;
   for (const type of TYPES) {
     for (const baseName of NAME_PARTS[type]) {
       const publisher = type === 'Sample' || rand() < 0.18 ? PUBLISHERS[10] : pick(PUBLISHERS.slice(0, 10));
-      let support = publisher.name === 'Platform Team' ? 'Platform' : publisher.verified ? pick(['Partner', 'Partner', 'Community']) : 'Community';
+      let support: SupportLevel = publisher.name === 'Platform Team' ? 'Platform' : publisher.verified ? pick<SupportLevel>(['Partner', 'Partner', 'Community']) : 'Community';
       if (rand() < 0.06) support = 'Deprecated';
       const category = pick(TYPE_CATEGORY[type]);
-      const license = publisher.name === 'Platform Team' ? 'Free' : pick(['Free', 'Free', 'Free', 'Paid', 'Free trial']);
+      const license: LicenseModel = publisher.name === 'Platform Team' ? 'Free' : pick<LicenseModel>(['Free', 'Free', 'Free', 'Paid', 'Free trial']);
       const ratingCount = int(0, 240);
       const rating = ratingCount === 0 ? 0 : Math.round((3 + rand() * 2) * 10) / 10;
       const major = int(1, 9);
@@ -133,7 +136,7 @@ function buildComponents() {
       const minVersion = pick(PLATFORM_VERSIONS.slice(1));
       const compatible = PLATFORM_VERSIONS.slice(0, PLATFORM_VERSIONS.indexOf(minVersion) + 1);
       const updatedDays = int(1, 700);
-      const releases = Array.from({ length: int(3, 7) }, (_, i) => ({
+      const releases: Release[] = Array.from({ length: int(3, 7) }, (_, i) => ({
         version: `${major}.${Math.max(0, minor - i)}.${i === 0 ? patch : int(0, 9)}`,
         date: dateDaysAgo(updatedDays + i * int(20, 90)),
         minPlatform: i === 0 ? minVersion : PLATFORM_VERSIONS[Math.min(PLATFORM_VERSIONS.length - 1, PLATFORM_VERSIONS.indexOf(minVersion) + Math.floor(i / 2))],
@@ -148,7 +151,7 @@ function buildComponents() {
           'Initial release.',
         ], int(1, 3)),
       }));
-      const reviews = Array.from({ length: Math.min(ratingCount, int(2, 6)) }, () => {
+      const reviews: Review[] = Array.from({ length: Math.min(ratingCount, int(2, 6)) }, () => {
         const [title, body] = pick(REVIEW_TEXT);
         return {
           author: pick(REVIEWERS),
@@ -198,8 +201,8 @@ function buildComponents() {
   return list;
 }
 
-function shortDescription(type, name, category) {
-  const templates = {
+function shortDescription(type: ComponentType, name: string, category: string): string {
+  const templates: Record<ComponentType, string> = {
     Module: `A reusable module that adds ${name.toLowerCase()} capabilities to your app with minimal setup.`,
     Widget: `A pluggable ${category.toLowerCase()} widget: drop ${name} on a page and configure it visually.`,
     Service: `Connect your app to external services in minutes with the ${name}.`,
@@ -214,16 +217,17 @@ function shortDescription(type, name, category) {
 export const COMPONENTS = buildComponents();
 export const PUBLISHER_LIST = PUBLISHERS;
 
-export function getComponent(slug) {
+/** Looks up a catalog component only; use `useCatalog()` to include user submissions. */
+export function getComponent(slug: string): Component | undefined {
   return COMPONENTS.find((c) => c.slug === slug);
 }
 
-export function formatNumber(n) {
+export function formatNumber(n: number): string {
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   return String(n);
 }
 
-export function formatDate(iso) {
+export function formatDate(iso: string): string {
   return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }

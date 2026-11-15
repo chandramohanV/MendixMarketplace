@@ -11,6 +11,7 @@ import { createServer } from 'vite';
 import puppeteer from 'puppeteer-core';
 import marketplace from './marketplace.test.mjs';
 import studio from './studio.test.mjs';
+import submit from './submit.test.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -67,7 +68,7 @@ const t = {
 };
 
 try {
-  for (const [name, suite] of [['Marketplace', marketplace], ['Studio download page', studio]]) {
+  for (const [name, suite] of [['Marketplace', marketplace], ['Studio download page', studio], ['Contribute / submit', submit]]) {
     console.log(`\n${name}`);
     try { await suite(t); } catch (e) { fail++; failures.push(`${name}: ${e.message}`); console.log(`  FAIL  suite crashed: ${e.stack}`); }
   }

@@ -1,11 +1,11 @@
 import { Route, Routes, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
-import Browse from './pages/Browse.jsx'
-import Detail from './pages/Detail.jsx'
+import Browse from './pages/Browse'
+import Detail from './pages/Detail'
 import Publishers from './pages/Publishers.jsx'
 import Studio from './pages/Studio.jsx'
-import Submit from './pages/Submit.jsx'
-import MyMarketplace from './pages/MyMarketplace.jsx'
+import Submit from './pages/Submit'
+import MyMarketplace from './pages/MyMarketplace'
 import { Guidelines, NotFound } from './pages/Misc.jsx'
 
 export default function App() {

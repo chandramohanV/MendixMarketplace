@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { useState, type CSSProperties, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { COMPONENTS, getComponent, formatDate, SUPPORT_INFO } from '../data/components';
+import { formatDate, SUPPORT_INFO } from '../data/components';
+import { useCatalog } from '../catalog';
 import { useStore } from '../store';
-import { ComponentCard, FavoriteButton, Stars, SupportBadge } from '../components/ui';
+import { ComponentCard, FavoriteButton, Stars, StatusBadge, SupportBadge } from '../components/ui';
 import { Icon } from '../components/icons';
 import { NotFound } from './Misc';
+import type { Component, Review } from '../types';
 
-const TABS = ['Overview', 'Documentation', 'Releases', 'Reviews', 'Developers'];
+const TABS = ['Overview', 'Documentation', 'Releases', 'Reviews', 'Developers'] as const;
+type Tab = (typeof TABS)[number];
+const isTab = (v: string | null): v is Tab => !!v && (TABS as readonly string[]).includes(v);
 const DEV_NAMES = ['Anna Kowalski', 'Ravi Shankar', 'Jonas Meyer', 'Priya Raman', 'Tom de Vries', 'Lena Berg', 'Carlos Diaz', 'Mei Lin'];
-const initials = (n) => n.split(' ').map((p) => p[0]).join('').slice(0, 2);
+const initials = (n: string) => n.split(' ').map((p) => p[0]).join('').slice(0, 2);
 
-function RatingBreakdown({ reviews, rating, count }) {
+function RatingBreakdown({ reviews, rating, count }: { reviews: Review[]; rating: number; count: number }) {
   const dist = [5, 4, 3, 2, 1].map((s) => {
     const base = Math.max(0, 1 - Math.abs(s - rating) / 2.2);
     return { s, w: base + reviews.filter((r) => r.stars === s).length * 0.2 };
@@ -36,13 +40,13 @@ function RatingBreakdown({ reviews, rating, count }) {
   );
 }
 
-function ReviewForm({ c, onDone }) {
+function ReviewForm({ c, onDone }: { c: Component; onDone: () => void }) {
   const { addReview } = useStore();
   const [stars, setStars] = useState(0);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [err, setErr] = useState('');
-  const submit = (e) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!stars) return setErr('Please select a rating.');
     if (!title.trim() || body.trim().length < 10) return setErr('Please add a title and at least 10 characters of feedback.');
@@ -69,23 +73,26 @@ function ReviewForm({ c, onDone }) {
 }
 
 export default function Detail() {
-  const { slug } = useParams();
+  const { slug = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const { userReviews, recordDownload, notify } = useStore();
-  const c = getComponent(slug);
-  const [version, setVersion] = useState(null);
+  const { components, findBySlug } = useCatalog();
+  const c = findBySlug(slug);
+  const [version, setVersion] = useState<string | null>(null);
   const [writing, setWriting] = useState(false);
-  const [helpful, setHelpful] = useState({});
+  const [helpful, setHelpful] = useState<Record<number, boolean>>({});
 
   if (!c) return <NotFound />;
 
-  const tab = TABS.includes(params.get('tab')) ? params.get('tab') : 'Overview';
-  const setTab = (t) => setParams(t === 'Overview' ? {} : { tab: t }, { replace: true });
+  const tabParam = params.get('tab');
+  const tab: Tab = isTab(tabParam) ? tabParam : 'Overview';
+  const setTab = (t: Tab) => setParams(t === 'Overview' ? {} : { tab: t }, { replace: true });
   const selected = c.releases.find((r) => r.version === version) || c.releases[0];
   const reviews = [...(userReviews[c.id] || []), ...c.reviews];
-  const related = COMPONENTS.filter((x) => x.id !== c.id && (x.category === c.category || x.publisher === c.publisher)).slice(0, 3);
-  const devs = Array.from({ length: (c.id % 3) + 2 }, (_, i) => DEV_NAMES[(c.id + i * 3) % DEV_NAMES.length]);
+  const related = components.filter((x) => x.id !== c.id && (x.category === c.category || x.publisher === c.publisher)).slice(0, 3);
+  const devs = c.status ? ['Demo User'] : Array.from({ length: (c.id % 3) + 2 }, (_, i) => DEV_NAMES[(c.id + i * 3) % DEV_NAMES.length]);
   const req = `${c.minPlatform}.0`;
+  const isPublic = !c.status || c.status === 'published';
 
   const share = async () => {
     try { await navigator.clipboard.writeText(window.location.href); notify('Link copied to clipboard'); } catch { notify('Could not copy link'); }
@@ -100,18 +107,26 @@ export default function Detail() {
       {c.support === 'Deprecated' && (
         <div className="alert">This component is deprecated and no longer maintained. Consider an alternative.</div>
       )}
+      {c.status === 'pending' && (
+        <div className="alert alert-info" role="status">
+          This submission is pending review and is only visible to you. <Link to="/my?tab=submissions">Manage your submissions</Link>
+        </div>
+      )}
+      {c.status === 'rejected' && (
+        <div className="alert" role="status">This submission was rejected and is only visible to you.</div>
+      )}
 
       <div className="detail-grid">
         <div className="detail-main">
           <header className="detail-head">
-            <div className="detail-image" style={{ '--c': c.color }}><span>{c.icon}</span></div>
+            <div className="detail-image" style={{ '--c': c.color } as CSSProperties}><span>{c.icon}</span></div>
             <div className="detail-title">
-              <SupportBadge support={c.support} long />
+              {c.status && c.status !== 'published' ? <StatusBadge status={c.status} /> : <SupportBadge support={c.support} long />}
               <h1>{c.name}</h1>
               <div className="detail-sub">Latest V {c.version} · Require Studio {req} or higher</div>
               <div className="detail-actions">
                 <button className="btn btn-primary lg" onClick={() => recordDownload(c.id, c.version, c.name)}>Use in Studio</button>
-                <FavoriteButton c={c} className="btn btn-secondary lg" withLabel />
+                {isPublic && <FavoriteButton c={c} className="btn btn-secondary lg" withLabel />}
                 <button className="btn btn-secondary lg" onClick={share}><Icon name="share" /> Share</button>
               </div>
             </div>
@@ -126,16 +141,28 @@ export default function Detail() {
           {tab === 'Overview' && (
             <div className="tab-panel prose">
               <h3>Overview</h3>
-              <p>{c.short} {c.name} integrates seamlessly with your existing applications and follows platform best practices, helping teams reduce custom development and deliver faster.</p>
-              <p>NOTE: version {c.version} requires at least Studio version {req}. For older Studio versions, use one of the previous releases listed under the Releases tab.</p>
-              <h3>Typical usage scenario</h3>
-              <ul>
-                <li>Accelerate delivery of {c.category.toLowerCase()} features</li>
-                <li>Standardize implementation across multiple apps</li>
-                <li>Reduce maintenance with a supported, versioned component</li>
-              </ul>
-              <h3>Features and limitations</h3>
-              <ul>{c.features.map((x) => <li key={x}>{x}</li>)}</ul>
+              {c.description ? (
+                c.description.split(/\n{2,}/).map((para, i) => <p key={i} className="pre-line">{para}</p>)
+              ) : (
+                <p>{c.short} {c.name} integrates seamlessly with your existing applications and follows platform best practices, helping teams reduce custom development and deliver faster.</p>
+              )}
+              <p>NOTE: version {c.version} requires at least Studio version {req}.{!c.status && ' For older Studio versions, use one of the previous releases listed under the Releases tab.'}</p>
+              {!c.status && (
+                <>
+                  <h3>Typical usage scenario</h3>
+                  <ul>
+                    <li>Accelerate delivery of {c.category.toLowerCase()} features</li>
+                    <li>Standardize implementation across multiple apps</li>
+                    <li>Reduce maintenance with a supported, versioned component</li>
+                  </ul>
+                </>
+              )}
+              {c.features.length > 0 && (
+                <>
+                  <h3>Features and limitations</h3>
+                  <ul>{c.features.map((x) => <li key={x}>{x}</li>)}</ul>
+                </>
+              )}
             </div>
           )}
 
@@ -181,11 +208,11 @@ export default function Detail() {
           {tab === 'Reviews' && (
             <div className="tab-panel">
               <RatingBreakdown reviews={reviews} rating={c.rating} count={c.ratingCount} />
-              {writing ? <ReviewForm c={c} onDone={() => setWriting(false)} /> : (
+              {isPublic && (writing ? <ReviewForm c={c} onDone={() => setWriting(false)} /> : (
                 <button className="btn btn-primary" onClick={() => setWriting(true)}>Write a review</button>
-              )}
+              ))}
               <div className="reviews">
-                {reviews.length === 0 && <p className="muted">No reviews yet. Be the first!</p>}
+                {reviews.length === 0 && <p className="muted">No reviews yet.{isPublic && ' Be the first!'}</p>}
                 {reviews.map((r, i) => (
                   <div key={i} className="review">
                     <div className="review-head">
@@ -252,6 +279,12 @@ export default function Detail() {
             <div>Require Studio {req} or higher</div>
             <div className="side-label mt">License</div>
             <a className="link" href="#license" onClick={(e) => { e.preventDefault(); notify('License links are fictional in this demo'); }}>{c.licenseType} <Icon name="external" size={14} /></a>
+            {c.repo && (
+              <>
+                <div className="side-label mt">Source</div>
+                <a className="link" href="#repo" onClick={(e) => { e.preventDefault(); notify(`Repository: ${c.repo}`); }}>View repository <Icon name="external" size={14} /></a>
+              </>
+            )}
           </div>
           <div className="side-block">
             <h4>Categories</h4>

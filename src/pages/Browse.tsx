@@ -1,22 +1,36 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { COMPONENTS, TYPES, CATEGORIES, SUPPORT, PLATFORM_VERSIONS, INDUSTRIES } from '../data/components';
+import { TYPES, CATEGORIES, SUPPORT, PLATFORM_VERSIONS, INDUSTRIES } from '../data/components';
+import { useCatalog } from '../catalog';
 import { ComponentCard, Pagination, Stars } from '../components/ui';
 import { HeroArt, Icon } from '../components/icons';
+import type { Component } from '../types';
 
 const PAGE_SIZE = 18;
-const MULTI = ['type', 'category', 'support', 'industry', 'publisher'];
+const MULTI = ['type', 'category', 'support', 'industry', 'publisher'] as const;
+type MultiKey = (typeof MULTI)[number];
 const SUPPORT_FILTERS = SUPPORT.filter((s) => s !== 'Deprecated');
 
-const SORTS = {
+type SortKey = 'relevance' | 'rating' | 'updated' | 'newest' | 'az';
+const SORTS: Record<SortKey, { label: string; fn: (a: Component, b: Component) => number }> = {
   relevance: { label: 'Most popular', fn: (a, b) => b.downloads - a.downloads },
   rating: { label: 'Highest rated', fn: (a, b) => b.rating - a.rating || b.ratingCount - a.ratingCount },
   updated: { label: 'Recently updated', fn: (a, b) => b.updated.localeCompare(a.updated) },
   newest: { label: 'Newest', fn: (a, b) => b.created.localeCompare(a.created) },
   az: { label: 'Name (A–Z)', fn: (a, b) => a.name.localeCompare(b.name) },
 };
+const isSortKey = (v: string): v is SortKey => v in SORTS;
 
-function matches(c, f) {
+interface Filters extends Record<MultiKey, string[]> {
+  q: string;
+  version: string;
+  rating: number;
+  sort: SortKey;
+  page: number;
+  view: string;
+}
+
+function matches(c: Component, f: Filters): boolean {
   if (f.q) {
     const hay = `${c.name} ${c.short} ${c.publisher} ${c.category} ${c.type} ${c.tags.join(' ')}`.toLowerCase();
     if (!f.q.toLowerCase().split(/\s+/).every((w) => hay.includes(w))) return false;
@@ -27,7 +41,9 @@ function matches(c, f) {
   return true;
 }
 
-function CheckGroup({ title, name, options, selected, onToggle, initial }) {
+function CheckGroup({ title, name, options, selected, onToggle, initial }: {
+  title: string; name: MultiKey; options: string[]; selected: string[]; onToggle: (name: MultiKey, value: string) => void; initial?: number;
+}) {
   const [more, setMore] = useState(false);
   const visible = initial && !more ? options.slice(0, initial) : options;
   return (
@@ -48,7 +64,7 @@ function CheckGroup({ title, name, options, selected, onToggle, initial }) {
   );
 }
 
-function Section({ title, link, items }) {
+function Section({ title, link, items }: { title: string; link: string; items: Component[] }) {
   return (
     <section className="section">
       <div className="section-head">
@@ -63,58 +79,64 @@ function Section({ title, link, items }) {
 export default function Browse() {
   const [params, setParams] = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { components } = useCatalog();
 
-  const f = {
+  const sortParam = params.get('sort') || 'relevance';
+  const f: Filters = {
     q: params.get('q') || '',
     version: params.get('version') || '',
     rating: Number(params.get('rating') || 0),
-    sort: params.get('sort') || 'relevance',
+    sort: isSortKey(sortParam) ? sortParam : 'relevance',
     page: Number(params.get('page') || 1),
     view: params.get('view') || '',
+    type: params.getAll('type'),
+    category: params.getAll('category'),
+    support: params.getAll('support'),
+    industry: params.getAll('industry'),
+    publisher: params.getAll('publisher'),
   };
-  MULTI.forEach((k) => { f[k] = params.getAll(k); });
 
-  const update = (mutator, keepPage = false) => {
+  const update = (mutator: (p: URLSearchParams) => void, keepPage = false) => {
     const next = new URLSearchParams(params);
     mutator(next);
     if (!keepPage) next.delete('page');
     setParams(next);
   };
-  const toggle = (name, value) => update((p) => {
+  const toggle = (name: MultiKey, value: string) => update((p) => {
     const vals = p.getAll(name);
     p.delete(name);
     (vals.includes(value) ? vals.filter((v) => v !== value) : [...vals, value]).forEach((v) => p.append(name, v));
   });
-  const setOne = (name, value) => update((p) => (value ? p.set(name, value) : p.delete(name)));
+  const setOne = (name: string, value: string) => update((p) => (value ? p.set(name, value) : p.delete(name)));
   const clearAll = () => setParams(new URLSearchParams());
 
-  const chips = [];
+  const chips: { label: string; remove: () => void }[] = [];
   if (f.q) chips.push({ label: `"${f.q}"`, remove: () => setOne('q', '') });
   MULTI.forEach((k) => f[k].forEach((v) => chips.push({ label: v, remove: () => toggle(k, v) })));
   if (f.version) chips.push({ label: `Studio ${f.version}`, remove: () => setOne('version', '') });
   if (f.rating) chips.push({ label: f.rating === 5 ? '5 stars' : `${f.rating}+ stars`, remove: () => setOne('rating', '') });
   const filtering = chips.length > 0 || f.view === 'all';
 
-  const results = useMemo(() => {
-    const sortFn = SORTS[f.sort]?.fn || SORTS.relevance.fn;
-    return COMPONENTS.filter((c) => matches(c, f)).sort(sortFn);
+  const results = useMemo(
+    () => components.filter((c) => matches(c, f)).sort(SORTS[f.sort].fn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params]);
+    [params, components],
+  );
 
   const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const page = Math.min(f.page, pages);
   const pageItems = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const sections = useMemo(() => {
-    const live = COMPONENTS.filter((c) => c.support !== 'Deprecated');
-    const top = (list, fn) => [...list].sort(fn).slice(0, 3);
+    const live = components.filter((c) => c.support !== 'Deprecated');
+    const top = (list: Component[], fn: (a: Component, b: Component) => number) => [...list].sort(fn).slice(0, 3);
     return [
       { title: 'Smarter with AI', link: '/components?category=Artificial+Intelligence', items: top(live.filter((c) => ['Artificial Intelligence', 'Agents'].includes(c.category)), (a, b) => b.downloads - a.downloads) },
       { title: 'From our Partners', link: '/components?support=Partner', items: top(live.filter((c) => c.support === 'Partner'), (a, b) => b.rating - a.rating) },
-      { title: "What's New", link: '/components?view=all&sort=newest', items: top(live, (a, b) => b.created.localeCompare(a.created)) },
+      { title: "What's New", link: '/components?view=all&sort=newest', items: top(live, (a, b) => b.created.localeCompare(a.created) || b.id - a.id) },
       { title: 'Most Downloaded', link: '/components?view=all&sort=relevance', items: top(live, (a, b) => b.downloads - a.downloads) },
     ];
-  }, []);
+  }, [components]);
 
   return (
     <div className="explore">
@@ -123,7 +145,7 @@ export default function Browse() {
           <div className="hero-text">
             <h1>Explore BloxMarket</h1>
             <p>Find components to help you build software faster.</p>
-            <form className="hero-search" onSubmit={(e) => { e.preventDefault(); setOne('q', new FormData(e.target).get('q').trim()); }}>
+            <form className="hero-search" onSubmit={(e) => { e.preventDefault(); setOne('q', String(new FormData(e.currentTarget).get('q') ?? '').trim()); }}>
               <input name="q" defaultValue={f.q} key={f.q} placeholder="Search by component or company" aria-label="Search by component or company" />
               <button type="submit" aria-label="Search"><Icon name="search" /></button>
             </form>
