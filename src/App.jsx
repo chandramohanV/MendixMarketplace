@@ -3,7 +3,8 @@ import Layout from './components/Layout.jsx'
 import Browse from './pages/Browse'
 import Detail from './pages/Detail'
 import Publishers from './pages/Publishers.jsx'
-import Studio from './pages/Studio.jsx'
+import Studio from './pages/Studio'
+import StudioManage from './pages/StudioManage'
 import Submit from './pages/Submit'
 import MyMarketplace from './pages/MyMarketplace'
 import { Guidelines, NotFound } from './pages/Misc.jsx'
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="components/:slug" element={<Detail />} />
         <Route path="link/components" element={<Navigate to="/components" replace />} />
         <Route path="studio" element={<Studio />} />
+        <Route path="studio/manage" element={<StudioManage />} />
         <Route path="link/studiopro" element={<Navigate to="/studio" replace />} />
         <Route path="publishers" element={<Publishers />} />
         <Route path="submit" element={<Submit />} />

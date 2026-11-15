@@ -1,19 +1,26 @@
 // Studio download page: hero, release types, release table (search, filter, sort, paging),
-// release-notes dialog, downloads, navigation and mobile layout.
-import { RELEASES, LATEST, RECOMMENDED_LTS } from '../../src/data/studio.js';
-
+// release-notes dialog, downloads, navigation and mobile layout. Expected values come from the API.
 export default async function studio(t) {
   const page = await t.newPage();
-  const { check, text, count, clickText, sleep, go } = t;
+  const { check, text, count, clickText, sleep, go, waitFor } = t;
+  const apiJson = async (p) => (await fetch(t.api + p)).json();
+  const summary = await apiJson('/summary');
+  const TOTAL = (await apiJson('/releases?pageSize=1')).total;
+  const LATEST = summary.latest.version;
+  const LTS = summary.recommendedLts.version;
+
   const status = () => text(page, '.pager-status');
+  // Give React a moment to start the request, then wait until the table has settled.
+  const loaded = async () => { await sleep(150); return waitFor(async () => !(await status()).includes('Loading') && (await count(page, '.skeleton-row')) === 0); };
   const versions = () => page.$$eval('.version-link', (e) => e.map((x) => x.innerText));
   const dates = () => page.$$eval('.release-table tbody td[data-label="Released"]', (e) => e.map((x) => Date.parse(x.innerText)));
 
   await go(page, '/studio');
+  await loaded();
   check('page renders heading with LTS badge', (await text(page, 'h1')).includes('Download Studio') && (await count(page, 'h1 .rbadge-lts')) === 1);
   check('page has no sidebar', (await count(page, '.sidebar')) === 0);
-  check('hero recommends latest LTS', (await text(page, '.studio-intro')).includes(`Studio ${RECOMMENDED_LTS.version}`), `(${RECOMMENDED_LTS.version})`);
-  check('latest-features panel shows latest version', (await text(page, '.studio-panels')).includes(`Studio ${LATEST.version}`));
+  check('hero recommends the API\'s latest LTS', await waitFor(async () => (await text(page, '.studio-intro')).includes(`Studio ${LTS}`)), `(${LTS})`);
+  check('latest-features panel shows the API\'s LATEST', (await text(page, '.studio-panels')).includes(`Studio ${LATEST}`), `(${LATEST})`);
   check('Windows and Mac download buttons', (await text(page, '.hero-actions')).includes('Download for Windows') && (await text(page, '.hero-actions')).includes('Download for Mac (Beta)'));
 
   // Release types legend
@@ -24,55 +31,57 @@ export default async function studio(t) {
 
   // Table
   check('table shows 10 rows', (await count(page, '.release-table tbody tr')) === 10);
-  check('pager shows "1 to 10 of N"', (await status()) === `1 to 10 of ${RELEASES.length}`, `(${await status()})`);
+  check('pager shows "1 to 10 of N" from the API total', (await status()) === `1 to 10 of ${TOTAL}`, `(${await status()})`);
+  check('LATEST badge on latest release row', (await page.$$eval('.release-table tbody tr', (rows) => rows.filter((r) => r.querySelector('.rbadge-latest')).map((r) => r.querySelector('.version-link').innerText))).join() === LATEST);
   const v = await versions();
-  check('LATEST badge on latest release row', (await page.$$eval('.release-table tbody tr', (rows) => rows.filter((r) => r.querySelector('.rbadge-latest')).map((r) => r.querySelector('.version-link').innerText))).join() === LATEST.version);
-  check('default order is version descending', v[0] === '11.17.0' && v.indexOf(LATEST.version) === 1, `(${v.slice(0, 3)})`);
+  check('default order is version descending', v[0] === '11.17.0' && v.indexOf(LATEST) === 1, `(${v.slice(0, 3)})`);
   check('LTS / MTS / BETA badges render', (await count(page, '.release-table .rbadge-lts')) > 0 && (await count(page, '.release-table .rbadge-beta')) === 1);
 
-  await page.click('.table-pager [aria-label="Next page"]'); await sleep(150);
+  await page.click('.table-pager [aria-label="Next page"]'); await loaded();
   check('next page', (await status()).startsWith('11 to 20') && page.url().includes('page=2'));
-  await page.click('.table-pager [aria-label="Last page"]'); await sleep(150);
-  const last = RELEASES.length - ((RELEASES.length - 1) % 10);
-  check('last page', (await status()) === `${last} to ${RELEASES.length} of ${RELEASES.length}`, `(${await status()})`);
+  await page.click('.table-pager [aria-label="Last page"]'); await loaded();
+  const last = TOTAL - ((TOTAL - 1) % 10);
+  check('last page', (await status()) === `${last} to ${TOTAL} of ${TOTAL}`, `(${await status()})`);
   check('next/last disabled on last page', await page.$eval('.table-pager [aria-label="Next page"]', (b) => b.disabled));
-  await page.click('.table-pager [aria-label="First page"]'); await sleep(150);
+  await page.click('.table-pager [aria-label="First page"]'); await loaded();
   check('first page', (await status()).startsWith('1 to 10'));
 
-  // Sort by release date
-  await page.click('.th-sort'); await sleep(150);
+  // Sort by release date (server-side)
+  await page.click('.th-sort'); await loaded();
   let d = await dates();
   check('sort by date: newest first', d.every((x, i) => i === 0 || d[i - 1] >= x) && (await page.$eval('th[aria-sort]', (e) => e.getAttribute('aria-sort'))) === 'descending');
-  await page.click('.th-sort'); await sleep(150);
+  await page.click('.th-sort'); await loaded();
   d = await dates();
   check('sort by date: oldest first', d.every((x, i) => i === 0 || d[i - 1] <= x) && (await versions())[0].startsWith('9.0'));
-  await page.click('.th-sort'); await sleep(150);
+  await page.click('.th-sort'); await loaded();
   check('sort resets to version order', (await versions())[0] === '11.17.0');
 
-  // Search + supported version filter
-  await page.type('.input-icon input', '10.24'); await sleep(200);
-  const expected = RELEASES.filter((r) => r.version.includes('10.24')).length;
-  check('search by version number (fast typing keeps every character)', (await page.$eval('.input-icon input', (e) => e.value)) === '10.24' && (await status()).endsWith(`of ${expected}`) && (await versions()).every((x) => x.includes('10.24')), `(${await status()})`);
-  await sleep(400);
+  // Search + supported version filter (server-side)
+  const expected = (await apiJson('/releases?q=10.24&pageSize=1')).total;
+  await page.type('.input-icon input', '10.24');
+  check('search box keeps every typed character', (await page.$eval('.input-icon input', (e) => e.value)) === '10.24');
+  check('search by version number (server-side)', await waitFor(async () => (await status()).endsWith(`of ${expected}`) && (await versions()).every((x) => x.includes('10.24'))), `(${await status()})`);
   check('search term synced to URL', new URL(page.url()).searchParams.get('q') === '10.24');
   await page.$eval('.input-icon input', (e) => { e.select(); });
-  await page.keyboard.press('Backspace'); await sleep(200);
-  await page.select('.release-controls select', '9.24'); await sleep(200);
+  await page.keyboard.press('Backspace');
+  await waitFor(async () => (await status()).endsWith(`of ${TOTAL}`));
+  await page.select('.release-controls select', '9.24'); await loaded();
   const v924 = await versions();
   check('supported version filter (9.24 LTS)', v924.length === 10 && v924.every((x) => x.startsWith('9.24.')), `(${await status()})`);
   check('9.x has no Mac download', (await count(page, '.dl-na')) === 10);
-  await page.type('.input-icon input', 'zzz'); await sleep(200);
-  check('empty state with clear action', (await count(page, '.no-rows')) === 1 && (await status()) === '0 to 0 of 0');
-  await clickText(page, '.no-rows button', 'Clear filters'); await sleep(200);
-  check('clear filters restores full list', (await status()) === `1 to 10 of ${RELEASES.length}`);
+  await page.type('.input-icon input', 'zzz');
+  check('empty state with clear action', await waitFor(async () => (await count(page, '.no-rows')) === 1 && (await status()) === '0 to 0 of 0'));
+  await clickText(page, '.no-rows button', 'Clear filters');
+  check('clear filters restores full list', await waitFor(async () => (await status()) === `1 to 10 of ${TOTAL}`));
 
-  // Release notes dialog
-  await page.click('.release-table tbody tr:nth-child(2) .notes-link'); await sleep(200);
-  check('release notes dialog opens', (await count(page, '[role=dialog]')) === 1 && (await text(page, '.modal-head h2')).includes(LATEST.version));
-  check('dialog lists notes', (await count(page, '.notes-section li')) >= 2);
+  // Release notes dialog (notes are fetched per release)
+  await page.click('.release-table tbody tr:nth-child(2) .notes-link');
+  check('release notes dialog opens', (await count(page, '[role=dialog]')) === 1 && (await text(page, '.modal-head h2')).includes(LATEST));
+  check('dialog loads notes from the API', await waitFor(async () => (await count(page, '.notes-section li')) >= 2));
   await page.keyboard.press('Escape'); await sleep(150);
   check('Escape closes dialog', (await count(page, '[role=dialog]')) === 0);
-  await page.click('.release-table tbody tr:nth-child(3) .version-link'); await sleep(150);
+  await page.click('.release-table tbody tr:nth-child(3) .version-link');
+  await waitFor(async () => (await count(page, '.modal .btn-primary')) === 1);
   await clickText(page, '.modal .btn', 'Download for Windows'); await sleep(200);
   check('download from dialog closes it and shows toast', (await count(page, '[role=dialog]')) === 0 && (await text(page, '.toast')).includes('for Windows'));
 

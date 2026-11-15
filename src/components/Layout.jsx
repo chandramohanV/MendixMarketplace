@@ -81,7 +81,8 @@ export default function Layout() {
   const { pathname } = useLocation();
   const isComponentPage = useMatch('/components/:slug');
   const isStudioPage = useMatch('/studio');
-  const isDetail = isComponentPage || isStudioPage; // full-width pages without the sidebar
+  const isStudioManagePage = useMatch('/studio/manage');
+  const isDetail = isComponentPage || isStudioPage || isStudioManagePage; // full-width pages without the sidebar
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
