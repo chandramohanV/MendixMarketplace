@@ -1,5 +1,7 @@
+import type { ReactElement } from 'react';
+
 // Small inline line-icon set (16px grid, currentColor).
-const P = {
+const PATHS = {
   apps: (
     <g fill="currentColor">
       {[3, 8, 13].flatMap((x) => [3, 8, 13].map((y) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.4" />))}
@@ -121,9 +123,12 @@ const P = {
   sparkle: (
     <path d="M8 1.5l1.4 4.1 4.1 1.4-4.1 1.4L8 12.5 6.6 8.4 2.5 7l4.1-1.4zM13 11l.6 1.4L15 13l-1.4.6L13 15l-.6-1.4L11 13l1.4-.6z" />
   ),
-};
+} satisfies Record<string, ReactElement>;
 
-export function Icon({ name, size = 16, className = '' }) {
+/** Every icon name; `<Icon name="typo" />` fails to compile. */
+export type IconName = keyof typeof PATHS;
+
+export function Icon({ name, size = 16, className = '' }: { name: IconName; size?: number; className?: string }) {
   return (
     <svg
       className={`icon ${className}`}
@@ -137,7 +142,7 @@ export function Icon({ name, size = 16, className = '' }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {P[name]}
+      {PATHS[name]}
     </svg>
   );
 }

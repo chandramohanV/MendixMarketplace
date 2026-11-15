@@ -1,13 +1,13 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
-import Layout from './components/Layout.jsx';
+import Layout from './components/Layout';
 import Browse from './pages/Browse';
 import Detail from './pages/Detail';
-import Publishers from './pages/Publishers.jsx';
+import Publishers from './pages/Publishers';
 import Studio from './pages/Studio';
 import StudioManage from './pages/StudioManage';
 import Submit from './pages/Submit';
 import MyMarketplace from './pages/MyMarketplace';
-import { Guidelines, NotFound } from './pages/Misc.jsx';
+import { Guidelines, NotFound } from './pages/Misc';
 
 export default function App() {
   return (

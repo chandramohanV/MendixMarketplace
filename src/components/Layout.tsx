@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 
-function TopBar({ onMenu }) {
+function TopBar({ onMenu }: { onMenu: () => void }) {
   const [q, setQ] = useState('');
   const navigate = useNavigate();
-  const submit = (e) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     navigate(q.trim() ? `/components?q=${encodeURIComponent(q.trim())}` : '/components');
     setQ('');
@@ -44,7 +44,20 @@ function TopBar({ onMenu }) {
   );
 }
 
-function NavItem({ to, icon, label, active, children }) {
+function NavItem({
+  to,
+  icon,
+  label,
+  active,
+  children,
+}: {
+  to: string;
+  icon: IconName;
+  label: string;
+  /** Overrides NavLink's own active matching (Explore is active for several paths). */
+  active?: boolean;
+  children?: ReactNode;
+}) {
   return (
     <NavLink to={to} className={({ isActive }) => `nav-item ${(active ?? isActive) ? 'active' : ''}`} title={label}>
       <Icon name={icon} />
@@ -54,7 +67,7 @@ function NavItem({ to, icon, label, active, children }) {
   );
 }
 
-function Sidebar({ open, collapsed, onCollapse }) {
+function Sidebar({ open, collapsed, onCollapse }: { open: boolean; collapsed: boolean; onCollapse: () => void }) {
   const { favorites } = useStore();
   const { pathname } = useLocation();
   const exploreActive = pathname === '/' || pathname.startsWith('/components');

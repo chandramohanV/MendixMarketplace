@@ -2,10 +2,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
-import App from './App.jsx';
+import App from './App';
 import { StoreProvider } from './store';
 
-createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('index.html is missing the #root element');
+
+createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
       <StoreProvider>
