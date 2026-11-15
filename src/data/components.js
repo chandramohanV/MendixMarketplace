@@ -9,7 +9,16 @@ function mulberry32(a) {
 }
 const rand = mulberry32(42);
 const pick = (arr) => arr[Math.floor(rand() * arr.length)];
-const pickN = (arr, n) => [...arr].sort(() => rand() - 0.5).slice(0, n);
+// Fisher–Yates: always consumes the same number of random values, so the
+// generated data is identical in every JS engine (a random sort comparator is not).
+const pickN = (arr, n) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+};
 const int = (min, max) => Math.floor(rand() * (max - min + 1)) + min;
 
 export const TYPES = ['Module', 'Widget', 'Service', 'Solution', 'Sample', 'Starter App', 'Industry Template'];

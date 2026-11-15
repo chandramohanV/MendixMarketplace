@@ -358,8 +358,9 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; backgrou
   .hero-inner, .explore-body, .detail, .container { padding-left: 16px; padding-right: 16px; }
   .hero h1 { font-size: 26px; }
   .card-grid { grid-template-columns: 1fr; }
-  .promo { flex-wrap: wrap; }
-  .promo .btn { flex: 1; }
+  .promo { flex-wrap: wrap; padding: 20px; }
+  .promo-text { flex: 1 1 calc(100% - 64px); }
+  .promo .btn { flex: 1 1 100%; }
   .results-tools { width: 100%; justify-content: space-between; }
   .footer { padding: 16px; }
   .rating-box { flex-direction: column; align-items: stretch; gap: 16px; }
