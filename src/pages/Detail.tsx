@@ -94,8 +94,9 @@ function ReviewForm({ c, onDone }: { c: Component; onDone: () => void }) {
           </button>
         ))}
       </div>
-      <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <input aria-label="Review title" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
       <textarea
+        aria-label="Review text"
         placeholder="What did you like or dislike?"
         rows={4}
         value={body}

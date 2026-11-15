@@ -1,20 +1,23 @@
 // File-backed release store: all mutations are serialized and written atomically.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { z } from 'zod';
 import {
   compareVersionsDesc,
   defaultMac,
   macRuleError,
   parseVersion,
   RELEASE_TYPE_INFO,
+  type CreateReleaseSchema,
   type FieldError,
+  type ListQuerySchema,
+  type PatchReleaseSchema,
   type ReleaseListItem,
   type ReleaseType,
   type StudioRelease,
   type StudioSummary,
+  type UpdateReleaseSchema,
 } from '../shared/studio';
-import type { z } from 'zod';
-import type { CreateReleaseSchema, ListQuerySchema, PatchReleaseSchema, UpdateReleaseSchema } from '../shared/studio';
 import { buildSeed } from './seed';
 
 type CreateBody = z.output<typeof CreateReleaseSchema>;
@@ -37,6 +40,13 @@ export class HttpError extends Error {
 const notFound = (version: string) => new HttpError(404, 'not_found', `Release ${version} was not found.`);
 const withoutNotes = ({ notes: _notes, ...rest }: StudioRelease): ReleaseListItem => rest;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+type Comparator = (a: StudioRelease, b: StudioRelease) => number;
+const SORTS: Record<ListParams['sort'], Comparator> = {
+  version: compareVersionsDesc,
+  'date-asc': (a, b) => a.date.localeCompare(b.date) || -compareVersionsDesc(a, b),
+  'date-desc': (a, b) => b.date.localeCompare(a.date) || compareVersionsDesc(a, b),
+};
 
 export class ReleaseStore {
   private releases: StudioRelease[] = [];
@@ -67,13 +77,7 @@ export class ReleaseStore {
     if (q.q) rows = rows.filter((r) => r.version.includes(q.q as string));
     if (q.line) rows = rows.filter((r) => r.line === q.line);
     if (q.type) rows = rows.filter((r) => (q.type === 'none' ? r.type === null : r.type === q.type));
-    const sorted = [...rows].sort(
-      q.sort === 'date-asc'
-        ? (a, b) => a.date.localeCompare(b.date) || -compareVersionsDesc(a, b)
-        : q.sort === 'date-desc'
-          ? (a, b) => b.date.localeCompare(a.date) || compareVersionsDesc(a, b)
-          : compareVersionsDesc,
-    );
+    const sorted = rows.toSorted(SORTS[q.sort]);
     const start = (q.page - 1) * q.pageSize;
     return {
       items: sorted.slice(start, start + q.pageSize).map(withoutNotes),
@@ -90,7 +94,7 @@ export class ReleaseStore {
   }
 
   summary(): StudioSummary {
-    const byVersion = [...this.releases].sort(compareVersionsDesc);
+    const byVersion = this.releases.toSorted(compareVersionsDesc);
     const latest = byVersion.find((r) => r.type === 'LATEST');
     const lts = byVersion.find((r) => r.type === 'LTS');
     const lines = new Map<string, 'LTS' | 'MTS'>();

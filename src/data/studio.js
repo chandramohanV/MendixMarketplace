@@ -136,7 +136,7 @@ export function compareVersionsDesc(a, b) {
 
 export const RELEASES = build();
 export const LATEST = RELEASES.find((r) => r.type === 'LATEST');
-export const RECOMMENDED_LTS = RELEASES.filter((r) => r.type === 'LTS').sort(compareVersionsDesc)[0];
+export const RECOMMENDED_LTS = RELEASES.filter((r) => r.type === 'LTS').toSorted(compareVersionsDesc)[0];
 export const SUPPORTED_LINES = LINES.map(([ma, mi, type]) => ({
   value: `${ma}.${mi}`,
   label: `${ma}.${mi} (${type})`,

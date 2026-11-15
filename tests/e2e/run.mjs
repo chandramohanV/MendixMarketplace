@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
-import puppeteer from 'puppeteer-core';
+import { launch } from 'puppeteer-core';
 import marketplace from './marketplace.test.mjs';
 import studio from './studio.test.mjs';
 import submit from './submit.test.mjs';
@@ -44,7 +44,7 @@ process.env.API_URL = api.url;
 const server = await createServer({ root, logLevel: 'error', server: { port: 5199, strictPort: false } });
 await server.listen();
 const base = server.resolvedUrls.local[0].replace(/\/$/, '');
-const browser = await puppeteer.launch({ executablePath: findBrowser(), headless: true });
+const browser = await launch({ executablePath: findBrowser(), headless: true });
 
 let pass = 0,
   fail = 0;

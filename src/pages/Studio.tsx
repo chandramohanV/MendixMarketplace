@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { RELEASE_TYPE_INFO, type ReleaseListItem, type ReleaseType, type StudioRelease } from '../../shared/studio';
-import { getRelease, getSummary, listReleases } from '../api/studio';
+import { getRelease, getSummary, listReleases, type ApiError } from '../api/studio';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { longDate, monthYear } from '../lib/studioFormat';
 import { useStore } from '../store';
@@ -120,6 +120,78 @@ function VideoCard({ onPlay, latest }: { onPlay: () => void; latest: ReleaseList
   );
 }
 
+/** Hero lines for the recommended LTS release: error, loaded, or loading placeholders. */
+function RecommendedRelease({
+  error,
+  release,
+  onRetry,
+  onOpenNotes,
+  onTrustedClick,
+}: {
+  error: ApiError | undefined;
+  release: ReleaseListItem | null | undefined;
+  onRetry: () => void;
+  onOpenNotes: (version: string) => void;
+  onTrustedClick: () => void;
+}) {
+  if (error) {
+    return (
+      <div className="inline-error dark" role="alert">
+        <span>Couldn't load the recommended release. {error.message}</span>
+        <button className="btn btn-outline-light sm" onClick={onRetry}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+  if (!release) {
+    return (
+      <>
+        <p className="lead-light">
+          <span className="skeleton dark" style={{ width: 260 }} />
+        </p>
+        <p className="meta-light">
+          <span className="skeleton dark" style={{ width: 200 }} />
+        </p>
+      </>
+    );
+  }
+  return (
+    <>
+      <p className="lead-light">
+        Download{' '}
+        <button className="inline-link" onClick={() => onOpenNotes(release.version)}>
+          Studio {release.version}
+        </button>{' '}
+        with Long-Term Support.
+      </p>
+      <p className="meta-light">
+        Released {monthYear(release.date)} ·{' '}
+        <button className="inline-link" onClick={() => onOpenNotes(release.version)}>
+          Release Notes
+        </button>{' '}
+        · Trusted by{' '}
+        <button className="inline-link" onClick={onTrustedClick}>
+          Industry Leaders
+        </button>
+      </p>
+    </>
+  );
+}
+
+function pagerStatus(loading: boolean, failed: boolean, start: number, end: number, total: number): string {
+  if (loading) return 'Loading…';
+  if (failed) return '—';
+  return `${start} to ${end} of ${total}`;
+}
+
+const NEXT_SORT: Record<SortParam, SortParam> = { '': 'date-desc', 'date-desc': 'date-asc', 'date-asc': '' };
+const ARIA_SORT: Record<SortParam, 'none' | 'ascending' | 'descending'> = {
+  '': 'none',
+  'date-asc': 'ascending',
+  'date-desc': 'descending',
+};
+
 export default function Studio() {
   const { notify } = useStore();
   const [params, setParams] = useSearchParams();
@@ -186,8 +258,7 @@ export default function Studio() {
   const start = total ? (cur - 1) * PAGE_SIZE + 1 : 0;
   const end = Math.min(cur * PAGE_SIZE, total);
   const goPage = (n: number) => setParam('page', n > 1 ? String(n) : '', true);
-  const cycleSort = () =>
-    setParam('sort', sort === 'date-desc' ? 'date-asc' : sort === 'date-asc' ? '' : 'date-desc', false);
+  const cycleSort = () => setParam('sort', NEXT_SORT[sort], false);
 
   const download = (r: Downloadable, platform: string) =>
     notify(`Downloading Studio ${r.version} for ${platform}… (demo)`);
@@ -204,43 +275,13 @@ export default function Studio() {
             <p className="lead-light">
               Use the Studio IDE to build high-quality applications faster with AI-assisted development.
             </p>
-            {summary.error ? (
-              <div className="inline-error dark" role="alert">
-                <span>Couldn't load the recommended release. {summary.error.message}</span>
-                <button className="btn btn-outline-light sm" onClick={summary.reload}>
-                  Retry
-                </button>
-              </div>
-            ) : lts ? (
-              <>
-                <p className="lead-light">
-                  Download{' '}
-                  <button className="inline-link" onClick={() => setNotesFor(lts.version)}>
-                    Studio {lts.version}
-                  </button>{' '}
-                  with Long-Term Support.
-                </p>
-                <p className="meta-light">
-                  Released {monthYear(lts.date)} ·{' '}
-                  <button className="inline-link" onClick={() => setNotesFor(lts.version)}>
-                    Release Notes
-                  </button>{' '}
-                  · Trusted by{' '}
-                  <button className="inline-link" onClick={() => notify('Customer stories are not part of this demo')}>
-                    Industry Leaders
-                  </button>
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="lead-light">
-                  <span className="skeleton dark" style={{ width: 260 }} />
-                </p>
-                <p className="meta-light">
-                  <span className="skeleton dark" style={{ width: 200 }} />
-                </p>
-              </>
-            )}
+            <RecommendedRelease
+              error={summary.error}
+              release={lts}
+              onRetry={summary.reload}
+              onOpenNotes={setNotesFor}
+              onTrustedClick={() => notify('Customer stories are not part of this demo')}
+            />
             <div className="hero-actions">
               <button className="btn btn-primary lg" disabled={!lts} onClick={() => lts && download(lts, 'Windows')}>
                 <Icon name="windows" /> Download for Windows
@@ -358,10 +399,7 @@ export default function Studio() {
             <thead>
               <tr>
                 <th scope="col">Version Number</th>
-                <th
-                  scope="col"
-                  aria-sort={sort === 'date-asc' ? 'ascending' : sort === 'date-desc' ? 'descending' : 'none'}
-                >
+                <th scope="col" aria-sort={ARIA_SORT[sort]}>
                   <button className="th-sort" onClick={cycleSort}>
                     Release Date <Icon name="sort" className={sort ? 'on' : ''} />
                   </button>
@@ -448,7 +486,7 @@ export default function Studio() {
             <Icon name="chevronLeft" />
           </button>
           <span className="pager-status" aria-live="polite">
-            {list.loading ? 'Loading…' : list.error ? '—' : `${start} to ${end} of ${total}`}
+            {pagerStatus(list.loading, !!list.error, start, end, total)}
           </span>
           <button
             className="icon-btn"

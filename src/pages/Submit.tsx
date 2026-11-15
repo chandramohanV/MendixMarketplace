@@ -138,6 +138,17 @@ function fromSubmission(s: Submission): FormState {
   };
 }
 
+function stepClass(index: number, current: number): string {
+  if (index === current) return 'active';
+  return index < current ? 'done' : '';
+}
+
+function primaryLabel(isLastStep: boolean, submitting: boolean, editing: boolean): string {
+  if (!isLastStep) return 'Next';
+  if (submitting) return 'Submitting…';
+  return editing ? 'Save changes' : 'Submit';
+}
+
 /** Label + control + inline error, wired up for screen readers. */
 function Field({
   id,
@@ -388,11 +399,7 @@ export default function Submit() {
       </div>
       <ol className="stepper">
         {STEPS.map((s, i) => (
-          <li
-            key={s}
-            className={i === step ? 'active' : i < step ? 'done' : ''}
-            aria-current={i === step ? 'step' : undefined}
-          >
+          <li key={s} className={stepClass(i, step)} aria-current={i === step ? 'step' : undefined}>
             <span aria-hidden="true">{i < step ? '✓' : i + 1}</span>
             {s}
           </li>
@@ -586,13 +593,7 @@ export default function Submit() {
             disabled={submitting}
             aria-busy={submitting || undefined}
           >
-            {step === STEPS.length - 1
-              ? submitting
-                ? 'Submitting…'
-                : editId !== null
-                  ? 'Save changes'
-                  : 'Submit'
-              : 'Next'}
+            {primaryLabel(step === STEPS.length - 1, submitting, editId !== null)}
           </button>
         </div>
       </form>

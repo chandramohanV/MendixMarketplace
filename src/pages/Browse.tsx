@@ -144,7 +144,7 @@ export default function Browse() {
   const filtering = chips.length > 0 || f.view === 'all';
 
   const results = useMemo(
-    () => components.filter((c) => matches(c, f)).sort(SORTS[f.sort].fn),
+    () => components.filter((c) => matches(c, f)).toSorted(SORTS[f.sort].fn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [params, components],
   );
@@ -155,7 +155,7 @@ export default function Browse() {
 
   const sections = useMemo(() => {
     const live = components.filter((c) => c.support !== 'Deprecated');
-    const top = (list: Component[], fn: (a: Component, b: Component) => number) => [...list].sort(fn).slice(0, 3);
+    const top = (list: Component[], fn: (a: Component, b: Component) => number) => list.toSorted(fn).slice(0, 3);
     return [
       {
         title: 'Smarter with AI',
@@ -347,7 +347,9 @@ export default function Browse() {
             ))}
           </fieldset>
         </aside>
-        {filtersOpen && <div className="backdrop" onClick={() => setFiltersOpen(false)} />}
+        {filtersOpen && (
+          <div className="backdrop" role="presentation" aria-hidden="true" onClick={() => setFiltersOpen(false)} />
+        )}
       </div>
     </div>
   );

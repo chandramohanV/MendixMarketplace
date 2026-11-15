@@ -23,10 +23,10 @@ export default async function submit(t) {
   };
   const setFile = (name, size) =>
     page.evaluate(
-      (name, size) => {
+      (fileName, fileSize) => {
         const input = document.querySelector('#f-file');
         const dt = new DataTransfer();
-        dt.items.add(new File([new Uint8Array(size)], name));
+        dt.items.add(new File([new Uint8Array(fileSize)], fileName));
         input.files = dt.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
       },

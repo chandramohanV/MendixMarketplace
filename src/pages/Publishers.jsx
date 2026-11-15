@@ -11,7 +11,7 @@ export default function Publishers() {
       downloads: items.reduce((s, c) => s + c.downloads, 0),
       rating: rated.length ? rated.reduce((s, c) => s + c.rating, 0) / rated.length : 0,
     };
-  }).sort((a, b) => b.downloads - a.downloads);
+  }).toSorted((a, b) => b.downloads - a.downloads);
 
   return (
     <div className="container page">

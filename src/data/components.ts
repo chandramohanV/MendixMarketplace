@@ -259,18 +259,26 @@ function dateDaysAgo(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// The helpers below consume random numbers in exactly the same order as the original inline
+// expressions; changing that order would change every generated component.
+function supportFor(publisher: Publisher): SupportLevel {
+  if (publisher.name === 'Platform Team') return 'Platform';
+  return publisher.verified ? pick<SupportLevel>(['Partner', 'Partner', 'Community']) : 'Community';
+}
+
+function priceFor(license: LicenseModel): number {
+  if (license === 'Paid') return int(5, 60) * 10;
+  if (license === 'Free trial') return int(10, 40) * 10;
+  return 0;
+}
+
 function buildComponents(): Component[] {
   const list: Component[] = [];
   let id = 1;
   for (const type of TYPES) {
     for (const baseName of NAME_PARTS[type]) {
       const publisher = type === 'Sample' || rand() < 0.18 ? PUBLISHERS[10] : pick(PUBLISHERS.slice(0, 10));
-      let support: SupportLevel =
-        publisher.name === 'Platform Team'
-          ? 'Platform'
-          : publisher.verified
-            ? pick<SupportLevel>(['Partner', 'Partner', 'Community'])
-            : 'Community';
+      let support = supportFor(publisher);
       if (rand() < 0.06) support = 'Deprecated';
       const category = pick(TYPE_CATEGORY[type]);
       const license: LicenseModel =
@@ -333,7 +341,7 @@ function buildComponents(): Component[] {
         support,
         license,
         licenseType: license === 'Free' ? pick(LICENSE_TYPES.filter((l) => l !== 'Commercial')) : 'Commercial',
-        price: license === 'Paid' ? int(5, 60) * 10 : license === 'Free trial' ? int(10, 40) * 10 : 0,
+        price: priceFor(license),
         rating,
         ratingCount,
         downloads: Math.floor(Math.pow(rand(), 2) * 120000) + int(50, 900),

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
-import puppeteer from 'puppeteer-core';
+import { launch } from 'puppeteer-core';
 import { startServer } from '../../server/server.ts';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -36,7 +36,7 @@ export async function startEnv() {
   const vite = await createServer({ root: ROOT, logLevel: 'error', server: { port: 5199, strictPort: false } });
   await vite.listen();
   const base = vite.resolvedUrls.local[0].replace(/\/$/, '');
-  const browser = await puppeteer.launch({
+  const browser = await launch({
     executablePath: findBrowser(),
     headless: true,
     args: process.env.CI ? ['--no-sandbox'] : [],

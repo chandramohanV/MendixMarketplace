@@ -149,6 +149,11 @@ function Field({
   );
 }
 
+function submitLabel(saving: boolean, creating: boolean): string {
+  if (saving) return 'Saving…';
+  return creating ? 'Create release' : 'Save changes';
+}
+
 function ReleaseForm({
   initial,
   onCancel,
@@ -411,7 +416,7 @@ function ReleaseForm({
           Cancel
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving} aria-busy={saving || undefined}>
-          {saving ? 'Saving…' : creating ? 'Create release' : 'Save changes'}
+          {submitLabel(saving, creating)}
         </button>
       </div>
     </form>

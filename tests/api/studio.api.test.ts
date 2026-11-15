@@ -5,32 +5,47 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { startServer, type RunningServer } from '../../server/server';
-import { todayISO } from '../../shared/studio';
+import {
+  todayISO,
+  type ApiErrorBody,
+  type ReleaseList,
+  type StudioRelease,
+  type StudioSummary,
+} from '../../shared/studio';
 
 let srv: RunningServer;
 let dir: string;
 let base: string;
 
+/**
+ * Every response shape the API returns, merged into one type. Each test reads only the fields that
+ * apply to the endpoint it calls; a wrong field is still caught at runtime by the assertion.
+ */
+type ResponseBody = ReleaseList & StudioRelease & StudioSummary & ApiErrorBody & { ok: boolean };
+
 interface Res {
   status: number;
   headers: Headers;
-  body: any;
-} // eslint-disable-line @typescript-eslint/no-explicit-any -- test responses are inspected ad hoc
+  /** True when the response had no body (e.g. 204). */
+  empty: boolean;
+  body: ResponseBody;
+}
 
 async function call(
   method: string,
   p: string,
-  body?: unknown,
+  payload?: unknown,
   opts: { raw?: string; headers?: Record<string, string> } = {},
 ): Promise<Res> {
-  const hasBody = body !== undefined || opts.raw !== undefined;
+  const hasBody = payload !== undefined || opts.raw !== undefined;
   const res = await fetch(base + p, {
     method,
     headers: { ...(hasBody ? { 'Content-Type': 'application/json' } : {}), ...opts.headers },
-    body: opts.raw ?? (body !== undefined ? JSON.stringify(body) : undefined),
+    body: opts.raw ?? (payload !== undefined ? JSON.stringify(payload) : undefined),
   });
   const text = await res.text();
-  return { status: res.status, headers: res.headers, body: text ? JSON.parse(text) : null };
+  const body = (text ? JSON.parse(text) : {}) as ResponseBody;
+  return { status: res.status, headers: res.headers, empty: !text, body };
 }
 const get = (p: string) => call('GET', p);
 const tomorrow = () => {
@@ -39,7 +54,7 @@ const tomorrow = () => {
   return d.toISOString().slice(0, 10);
 };
 const allReleases = async () => (await get('/releases?pageSize=100&page=1')).body.total as number;
-const latestVersion = async () => (await get('/summary')).body.latest.version as string;
+const latestVersion = async () => (await get('/summary')).body.latest?.version;
 
 function assertError(res: Res, status: number, code?: string) {
   assert.equal(res.status, status, JSON.stringify(res.body));
@@ -48,7 +63,7 @@ function assertError(res: Res, status: number, code?: string) {
   if (code) assert.equal(res.body.error.code, code);
   assert.doesNotMatch(JSON.stringify(res.body), /\bat .+:\d+:\d+|node_modules|\.ts:\d+/, 'no stack traces');
 }
-const detailFields = (res: Res) => (res.body.error.details ?? []).map((d: { field: string }) => d.field);
+const detailFields = (res: Res) => (res.body.error.details ?? []).map((d) => d.field);
 
 before(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'studio-api-'));
@@ -110,22 +125,22 @@ describe('GET /releases', () => {
   });
   test('filters: q, line, type (including none)', async () => {
     const q = await get('/releases?q=10.24&pageSize=100');
-    assert.ok(q.body.total > 0 && q.body.items.every((i: { version: string }) => i.version.includes('10.24')));
+    assert.ok(q.body.total > 0 && q.body.items.every((i) => i.version.includes('10.24')));
     const line = await get('/releases?line=9.24&pageSize=100');
     assert.equal(line.body.total, 41);
-    assert.ok(line.body.items.every((i: { line: string }) => i.line === '9.24'));
+    assert.ok(line.body.items.every((i) => i.line === '9.24'));
     const lts = await get('/releases?type=LTS&pageSize=100');
-    assert.ok(lts.body.items.every((i: { type: string }) => i.type === 'LTS'));
+    assert.ok(lts.body.items.every((i) => i.type === 'LTS'));
     const none = await get('/releases?type=none&pageSize=100');
-    assert.ok(none.body.total > 0 && none.body.items.every((i: { type: null }) => i.type === null));
+    assert.ok(none.body.total > 0 && none.body.items.every((i) => i.type === null));
     assertError(await get('/releases?line=abc'), 400, 'bad_query');
     assertError(await get('/releases?type=GA'), 400, 'bad_query');
   });
   test('sorting by date both ways', async () => {
-    const desc = (await get('/releases?sort=date-desc&pageSize=100')).body.items.map((i: { date: string }) => i.date);
-    assert.deepEqual(desc, [...desc].sort().reverse());
-    const asc = (await get('/releases?sort=date-asc&pageSize=100')).body.items.map((i: { date: string }) => i.date);
-    assert.deepEqual(asc, [...asc].sort());
+    const desc = (await get('/releases?sort=date-desc&pageSize=100')).body.items.map((i) => i.date);
+    assert.deepEqual(desc, desc.toSorted().toReversed());
+    const asc = (await get('/releases?sort=date-asc&pageSize=100')).body.items.map((i) => i.date);
+    assert.deepEqual(asc, asc.toSorted());
     assertError(await get('/releases?sort=random'), 400, 'bad_query');
   });
   test('unknown query parameters are rejected', async () => {
@@ -147,14 +162,10 @@ describe('GET /releases/:version and /summary', () => {
   });
   test('summary has latest, recommended LTS, supported lines and types', async () => {
     const r = await get('/summary');
-    assert.equal(r.body.latest.version, '11.16.1');
-    assert.equal(r.body.recommendedLts.type, 'LTS');
-    assert.ok(
-      r.body.supportedLines.some(
-        (l: { value: string; label: string }) => l.value === '9.24' && l.label === '9.24 (LTS)',
-      ),
-    );
-    assert.deepEqual(Object.keys(r.body.types).sort(), ['BETA', 'LATEST', 'LTS', 'MTS']);
+    assert.equal(r.body.latest?.version, '11.16.1');
+    assert.equal(r.body.recommendedLts?.type, 'LTS');
+    assert.ok(r.body.supportedLines.some((l) => l.value === '9.24' && l.label === '9.24 (LTS)'));
+    assert.deepEqual(Object.keys(r.body.types).toSorted(), ['BETA', 'LATEST', 'LTS', 'MTS']);
   });
 });
 
@@ -231,11 +242,9 @@ describe('POST /releases', () => {
     const ok = await call('POST', '/releases', {
       version: '11.31.0',
       date: '2026-01-01',
-      notes: {
-        ...Object.fromEntries(
-          Array.from({ length: 5 }, (_, i) => [`S${i}`, Array.from({ length: 20 }, () => 'z'.repeat(300))]),
-        ),
-      },
+      notes: Object.fromEntries(
+        Array.from({ length: 5 }, (_, i) => [`S${i}`, Array.from({ length: 20 }, () => 'z'.repeat(300))]),
+      ),
     });
     assert.equal(ok.status, 201, 'exactly at the limits is accepted');
   });
@@ -284,11 +293,11 @@ describe('PUT and PATCH /releases/:version', () => {
     assertError(await call('PUT', '/releases/1.0.0', { type: null, date: '2026-01-01', notes: {} }), 404, 'not_found');
   });
   test('PATCH updates only what is sent', async () => {
-    const before = (await get('/releases/11.16.2')).body;
+    const original = (await get('/releases/11.16.2')).body;
     const r = await call('PATCH', '/releases/11.16.2', { date: '2026-11-12' });
     assert.equal(r.status, 200);
     assert.equal(r.body.date, '2026-11-12');
-    assert.deepEqual(r.body.notes, before.notes);
+    assert.deepEqual(r.body.notes, original.notes);
     assertError(await call('PATCH', '/releases/11.16.2', {}), 422, 'validation_failed');
     assertError(await call('PATCH', '/releases/11.16.2', { version: '11.16.9' }), 422, 'validation_failed');
     assertError(await call('PATCH', '/releases/11.16.2', { date: tomorrow() }), 422, 'validation_failed');
@@ -310,7 +319,7 @@ describe('LATEST rules', () => {
     assert.equal((await get('/releases?type=LATEST')).body.total, 1);
   });
   test("a demoted LATEST falls back to its line's LTS/MTS type", async () => {
-    const lts = (await get('/summary')).body.recommendedLts.version; // e.g. 11.12.5 (LTS)
+    const lts = (await get('/summary')).body.recommendedLts?.version; // e.g. 11.12.5 (LTS)
     await call('PATCH', `/releases/${lts}`, { type: 'LATEST' });
     assert.equal(await latestVersion(), lts);
     await call('PATCH', '/releases/11.16.2', { type: 'LATEST' });
@@ -349,7 +358,7 @@ describe('DELETE /releases/:version', () => {
   test('deletes with 204, then 404', async () => {
     const del = await call('DELETE', '/releases/9.24.99');
     assert.equal(del.status, 204);
-    assert.equal(del.body, null);
+    assert.equal(del.empty, true, '204 has no body');
     assertError(await get('/releases/9.24.99'), 404);
     assertError(await call('DELETE', '/releases/9.24.99'), 404, 'not_found');
   });
@@ -357,7 +366,7 @@ describe('DELETE /releases/:version', () => {
 
 describe('persistence and concurrency', () => {
   test('20 parallel creates: no lost writes, valid file, no temp files left', async () => {
-    const before = await allReleases();
+    const totalBefore = await allReleases();
     const results = await Promise.all(
       Array.from({ length: 20 }, (_, i) => call('POST', '/releases', { version: `12.0.${i}`, date: '2026-11-01' })),
     );
@@ -365,10 +374,10 @@ describe('persistence and concurrency', () => {
       results.map((r) => r.status),
       Array(20).fill(201),
     );
-    assert.equal(await allReleases(), before + 20);
-    const file = JSON.parse(await fs.readFile(path.join(dir, 'releases.json'), 'utf8'));
-    assert.equal(file.length, before + 20);
-    assert.equal(file.filter((r: { version: string }) => r.version.startsWith('12.0.')).length, 20);
+    assert.equal(await allReleases(), totalBefore + 20);
+    const file = JSON.parse(await fs.readFile(path.join(dir, 'releases.json'), 'utf8')) as StudioRelease[];
+    assert.equal(file.length, totalBefore + 20);
+    assert.equal(file.filter((r) => r.version.startsWith('12.0.')).length, 20);
     assert.deepEqual(
       (await fs.readdir(dir)).filter((f) => f.endsWith('.tmp')),
       [],

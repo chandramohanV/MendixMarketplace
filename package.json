@@ -9,7 +9,7 @@
     "dev:api": "tsx watch server/index.ts",
     "api:reset": "tsx server/reset.ts",
     "build": "vite build",
-    "lint": "oxlint",
+    "lint": "oxlint --deny-warnings",
     "typecheck": "tsc --noEmit",
     "test:api": "tsx --test tests/api/studio.api.test.ts",
     "test:e2e": "tsx tests/e2e/run.mjs",
@@ -17,7 +17,8 @@
     "visual:baseline": "tsx tests/visual/visual.mjs baseline",
     "visual:compare": "tsx tests/visual/visual.mjs compare",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm run build && npm run test:api && npm run test:e2e"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.8",

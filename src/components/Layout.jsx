@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { Icon } from './icons';
@@ -44,30 +44,29 @@ function TopBar({ onMenu }) {
   );
 }
 
+function NavItem({ to, icon, label, active, children }) {
+  return (
+    <NavLink to={to} className={({ isActive }) => `nav-item ${(active ?? isActive) ? 'active' : ''}`} title={label}>
+      <Icon name={icon} />
+      <span className="nav-text">{label}</span>
+      {children}
+    </NavLink>
+  );
+}
+
 function Sidebar({ open, collapsed, onCollapse }) {
   const { favorites } = useStore();
   const { pathname } = useLocation();
   const exploreActive = pathname === '/' || pathname.startsWith('/components');
-  const item = (to, icon, label, active, extra) => (
-    <NavLink to={to} className={({ isActive }) => `nav-item ${(active ?? isActive) ? 'active' : ''}`} title={label}>
-      <Icon name={icon} />
-      <span className="nav-text">{label}</span>
-      {extra}
-    </NavLink>
-  );
   return (
     <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`} aria-label="Sidebar navigation">
       <nav className="nav-group">
-        {item('/components', 'explore', 'Explore', exploreActive)}
-        {item(
-          '/my',
-          'heart',
-          'My Marketplace',
-          undefined,
-          favorites.length > 0 && <span className="nav-count">{favorites.length}</span>,
-        )}
-        {item('/publishers', 'building', 'Publishers')}
-        {item('/submit', 'upload', 'Contribute')}
+        <NavItem to="/components" icon="explore" label="Explore" active={exploreActive} />
+        <NavItem to="/my" icon="heart" label="My Marketplace">
+          {favorites.length > 0 && <span className="nav-count">{favorites.length}</span>}
+        </NavItem>
+        <NavItem to="/publishers" icon="building" label="Publishers" />
+        <NavItem to="/submit" icon="upload" label="Contribute" />
       </nav>
       <div className="nav-sep" />
       <nav className="nav-group">
@@ -79,7 +78,7 @@ function Sidebar({ open, collapsed, onCollapse }) {
           <span className="studio-mark">bx</span>
           <span className="nav-text">Download Studio</span>
         </NavLink>
-        {item('/guidelines', 'book', 'Guidelines')}
+        <NavItem to="/guidelines" icon="book" label="Guidelines" />
       </nav>
       <button
         className="nav-item collapse-btn"
@@ -116,7 +115,11 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  // Scroll back to the top whenever the route changes.
+  const lastPathname = useRef(pathname);
   useEffect(() => {
+    if (lastPathname.current === pathname) return;
+    lastPathname.current = pathname;
     document.querySelector('.main-scroll')?.scrollTo(0, 0);
     window.scrollTo(0, 0);
   }, [pathname]);
@@ -126,8 +129,11 @@ export default function Layout() {
       <TopBar onMenu={() => setMenuOpen((o) => !o)} />
       <div className="shell-body">
         {!isDetail && <Sidebar open={menuOpen} collapsed={collapsed} onCollapse={() => setCollapsed((c) => !c)} />}
-        {menuOpen && !isDetail && <div className="backdrop" onClick={() => setMenuOpen(false)} />}
-        <div className="main-scroll" onClick={() => menuOpen && setMenuOpen(false)}>
+        {/* Mouse convenience only: the backdrop covers the page while the mobile menu is open. */}
+        {menuOpen && !isDetail && (
+          <div className="backdrop" role="presentation" aria-hidden="true" onClick={() => setMenuOpen(false)} />
+        )}
+        <div className="main-scroll">
           <main>
             <Outlet />
           </main>

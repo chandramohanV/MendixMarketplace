@@ -55,7 +55,7 @@ export default async function marketplace(t) {
   await page.select('.sort select', 'az');
   await sleep(200);
   const names = await page.$$eval('.card-title', (e) => e.map((x) => x.innerText));
-  check('sort A–Z', names.join() === [...names].sort((a, b) => a.localeCompare(b)).join());
+  check('sort A–Z', names.join() === names.toSorted((a, b) => a.localeCompare(b)).join());
   await page.click('.pagination button:last-child');
   await sleep(200);
   check('pagination', page.url().includes('page=2'));

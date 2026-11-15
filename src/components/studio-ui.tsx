@@ -40,6 +40,7 @@ export function Modal({
   return (
     <div
       className="modal-backdrop"
+      role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -68,9 +69,9 @@ export function Modal({
 export function SkeletonRows({ rows, cols }: { rows: number; cols: number }) {
   return (
     <>
-      {Array.from({ length: rows }, (_, r) => (
+      {Array.from({ length: rows }, (_row, r) => (
         <tr key={r} className="skeleton-row" aria-hidden="true">
-          {Array.from({ length: cols }, (_, c) => (
+          {Array.from({ length: cols }, (_cell, c) => (
             <td key={c}>
               <span className="skeleton" style={{ width: `${[60, 70, 55, 80][c % 4]}%` }} />
             </td>
