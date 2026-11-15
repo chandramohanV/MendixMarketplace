@@ -205,6 +205,16 @@ export default async function submit(t) {
   check('draft restored into the field', (await page.$eval('#f-name', (e) => e.value)) === 'Draft Only Component');
   await clickText(page, '.form-title button', 'Discard draft'); await sleep(150);
   check('discard draft clears form and storage', (await page.$eval('#f-name', (e) => e.value)) === '' && (await storage('mp.submitDraft')) === null && (await count(page, '.form-title button')) === 0);
+
+  // --- Regression: far-future publish times must not fire immediately (setTimeout overflow) ---
+  await page.evaluate(() => {
+    const subs = JSON.parse(localStorage.getItem('mp.submissions') || '[]');
+    subs.unshift({ ...subs[0], id: 1999999, slug: '1999999-far-future', name: 'Far Future Widget', status: 'pending', publishAt: '2099-01-01T00:00:00.000Z' });
+    localStorage.setItem('mp.submissions', JSON.stringify(subs));
+  });
+  await go(page, '/my?tab=submissions');
+  await sleep(1000);
+  check('pending submission with a far-future publish time stays pending', (await submissions()).find((s) => s.id === 1999999)?.status === 'pending');
   await page.close();
 
   // --- Mobile ---

@@ -137,9 +137,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Demo reviewer: publish each pending submission once its publishAt time arrives.
   useEffect(() => {
-    const timers = submissions
-      .filter((s) => s.status === 'pending' && s.publishAt)
-      .map((s) => setTimeout(() => setSubmissionStatus(s.id, 'published'), Math.max(0, Date.parse(s.publishAt as string) - Date.now())));
+    // setTimeout overflows above 2^31-1 ms (~24.8 days) and would fire immediately, so publish
+    // times further out than that are not scheduled in this session.
+    const MAX_TIMER_MS = 2 ** 31 - 1;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const s of submissions) {
+      if (s.status !== 'pending' || !s.publishAt) continue;
+      const delay = Math.max(0, Date.parse(s.publishAt) - Date.now());
+      if (delay <= MAX_TIMER_MS) timers.push(setTimeout(() => setSubmissionStatus(s.id, 'published'), delay));
+    }
     return () => timers.forEach(clearTimeout);
   }, [submissions, setSubmissionStatus]);
 
