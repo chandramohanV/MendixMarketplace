@@ -33,7 +33,13 @@ interface Filters extends Record<MultiKey, string[]> {
 function matches(c: Component, f: Filters): boolean {
   if (f.q) {
     const hay = `${c.name} ${c.short} ${c.publisher} ${c.category} ${c.type} ${c.tags.join(' ')}`.toLowerCase();
-    if (!f.q.toLowerCase().split(/\s+/).every((w) => hay.includes(w))) return false;
+    if (
+      !f.q
+        .toLowerCase()
+        .split(/\s+/)
+        .every((w) => hay.includes(w))
+    )
+      return false;
   }
   for (const key of MULTI) if (f[key].length && !f[key].includes(c[key])) return false;
   if (f.version && !c.compatible.includes(f.version)) return false;
@@ -41,8 +47,20 @@ function matches(c: Component, f: Filters): boolean {
   return true;
 }
 
-function CheckGroup({ title, name, options, selected, onToggle, initial }: {
-  title: string; name: MultiKey; options: string[]; selected: string[]; onToggle: (name: MultiKey, value: string) => void; initial?: number;
+function CheckGroup({
+  title,
+  name,
+  options,
+  selected,
+  onToggle,
+  initial,
+}: {
+  title: string;
+  name: MultiKey;
+  options: string[];
+  selected: string[];
+  onToggle: (name: MultiKey, value: string) => void;
+  initial?: number;
 }) {
   const [more, setMore] = useState(false);
   const visible = initial && !more ? options.slice(0, initial) : options;
@@ -69,9 +87,15 @@ function Section({ title, link, items }: { title: string; link: string; items: C
     <section className="section">
       <div className="section-head">
         <h2>{title}</h2>
-        <Link to={link} className="text-btn">View All</Link>
+        <Link to={link} className="text-btn">
+          View All
+        </Link>
       </div>
-      <div className="card-grid">{items.map((c) => <ComponentCard key={c.id} c={c} />)}</div>
+      <div className="card-grid">
+        {items.map((c) => (
+          <ComponentCard key={c.id} c={c} />
+        ))}
+      </div>
     </section>
   );
 }
@@ -102,11 +126,12 @@ export default function Browse() {
     if (!keepPage) next.delete('page');
     setParams(next);
   };
-  const toggle = (name: MultiKey, value: string) => update((p) => {
-    const vals = p.getAll(name);
-    p.delete(name);
-    (vals.includes(value) ? vals.filter((v) => v !== value) : [...vals, value]).forEach((v) => p.append(name, v));
-  });
+  const toggle = (name: MultiKey, value: string) =>
+    update((p) => {
+      const vals = p.getAll(name);
+      p.delete(name);
+      (vals.includes(value) ? vals.filter((v) => v !== value) : [...vals, value]).forEach((v) => p.append(name, v));
+    });
   const setOne = (name: string, value: string) => update((p) => (value ? p.set(name, value) : p.delete(name)));
   const clearAll = () => setParams(new URLSearchParams());
 
@@ -114,7 +139,8 @@ export default function Browse() {
   if (f.q) chips.push({ label: `"${f.q}"`, remove: () => setOne('q', '') });
   MULTI.forEach((k) => f[k].forEach((v) => chips.push({ label: v, remove: () => toggle(k, v) })));
   if (f.version) chips.push({ label: `Studio ${f.version}`, remove: () => setOne('version', '') });
-  if (f.rating) chips.push({ label: f.rating === 5 ? '5 stars' : `${f.rating}+ stars`, remove: () => setOne('rating', '') });
+  if (f.rating)
+    chips.push({ label: f.rating === 5 ? '5 stars' : `${f.rating}+ stars`, remove: () => setOne('rating', '') });
   const filtering = chips.length > 0 || f.view === 'all';
 
   const results = useMemo(
@@ -131,10 +157,32 @@ export default function Browse() {
     const live = components.filter((c) => c.support !== 'Deprecated');
     const top = (list: Component[], fn: (a: Component, b: Component) => number) => [...list].sort(fn).slice(0, 3);
     return [
-      { title: 'Smarter with AI', link: '/components?category=Artificial+Intelligence', items: top(live.filter((c) => ['Artificial Intelligence', 'Agents'].includes(c.category)), (a, b) => b.downloads - a.downloads) },
-      { title: 'From our Partners', link: '/components?support=Partner', items: top(live.filter((c) => c.support === 'Partner'), (a, b) => b.rating - a.rating) },
-      { title: "What's New", link: '/components?view=all&sort=newest', items: top(live, (a, b) => b.created.localeCompare(a.created) || b.id - a.id) },
-      { title: 'Most Downloaded', link: '/components?view=all&sort=relevance', items: top(live, (a, b) => b.downloads - a.downloads) },
+      {
+        title: 'Smarter with AI',
+        link: '/components?category=Artificial+Intelligence',
+        items: top(
+          live.filter((c) => ['Artificial Intelligence', 'Agents'].includes(c.category)),
+          (a, b) => b.downloads - a.downloads,
+        ),
+      },
+      {
+        title: 'From our Partners',
+        link: '/components?support=Partner',
+        items: top(
+          live.filter((c) => c.support === 'Partner'),
+          (a, b) => b.rating - a.rating,
+        ),
+      },
+      {
+        title: "What's New",
+        link: '/components?view=all&sort=newest',
+        items: top(live, (a, b) => b.created.localeCompare(a.created) || b.id - a.id),
+      },
+      {
+        title: 'Most Downloaded',
+        link: '/components?view=all&sort=relevance',
+        items: top(live, (a, b) => b.downloads - a.downloads),
+      },
     ];
   }, [components]);
 
@@ -145,9 +193,23 @@ export default function Browse() {
           <div className="hero-text">
             <h1>Explore BloxMarket</h1>
             <p>Find components to help you build software faster.</p>
-            <form className="hero-search" onSubmit={(e) => { e.preventDefault(); setOne('q', String(new FormData(e.currentTarget).get('q') ?? '').trim()); }}>
-              <input name="q" defaultValue={f.q} key={f.q} placeholder="Search by component or company" aria-label="Search by component or company" />
-              <button type="submit" aria-label="Search"><Icon name="search" /></button>
+            <form
+              className="hero-search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setOne('q', String(new FormData(e.currentTarget).get('q') ?? '').trim());
+              }}
+            >
+              <input
+                name="q"
+                defaultValue={f.q}
+                key={f.q}
+                placeholder="Search by component or company"
+                aria-label="Search by component or company"
+              />
+              <button type="submit" aria-label="Search">
+                <Icon name="search" />
+              </button>
             </form>
           </div>
           <HeroArt />
@@ -161,19 +223,31 @@ export default function Browse() {
               <div className="filtered-by">
                 <span className="filtered-label">Filtered by:</span>
                 {chips.map((c, i) => (
-                  <button key={i} className="chip" onClick={c.remove} aria-label={`Remove filter ${c.label}`}>{c.label} <Icon name="close" size={10} /></button>
+                  <button key={i} className="chip" onClick={c.remove} aria-label={`Remove filter ${c.label}`}>
+                    {c.label} <Icon name="close" size={10} />
+                  </button>
                 ))}
-                {chips.length > 0 && <button className="text-btn link" onClick={clearAll}>Clear all</button>}
+                {chips.length > 0 && (
+                  <button className="text-btn link" onClick={clearAll}>
+                    Clear all
+                  </button>
+                )}
                 {chips.length === 0 && <span className="muted">All components</span>}
               </div>
               <div className="results-head">
                 <h2>{results.length} Results Found</h2>
                 <div className="results-tools">
-                  <button className="btn btn-secondary filters-toggle" onClick={() => setFiltersOpen(true)}><Icon name="filter" /> Filters</button>
+                  <button className="btn btn-secondary filters-toggle" onClick={() => setFiltersOpen(true)}>
+                    <Icon name="filter" /> Filters
+                  </button>
                   <label className="sort">
                     <span>Sort by</span>
                     <select value={f.sort} onChange={(e) => setOne('sort', e.target.value)}>
-                      {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
+                      {Object.entries(SORTS).map(([k, s]) => (
+                        <option key={k} value={k}>
+                          {s.label}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 </div>
@@ -182,12 +256,25 @@ export default function Browse() {
                 <div className="empty">
                   <h3>No results found</h3>
                   <p className="muted">Try removing some filters or using different keywords.</p>
-                  <button className="btn btn-primary" onClick={clearAll}>Clear all filters</button>
+                  <button className="btn btn-primary" onClick={clearAll}>
+                    Clear all filters
+                  </button>
                 </div>
               ) : (
-                <div className="card-grid">{pageItems.map((c) => <ComponentCard key={c.id} c={c} />)}</div>
+                <div className="card-grid">
+                  {pageItems.map((c) => (
+                    <ComponentCard key={c.id} c={c} />
+                  ))}
+                </div>
               )}
-              <Pagination page={page} pages={pages} onChange={(n) => { update((p) => p.set('page', String(n)), true); document.querySelector('.main-scroll')?.scrollTo({ top: 300, behavior: 'smooth' }); }} />
+              <Pagination
+                page={page}
+                pages={pages}
+                onChange={(n) => {
+                  update((p) => p.set('page', String(n)), true);
+                  document.querySelector('.main-scroll')?.scrollTo({ top: 300, behavior: 'smooth' });
+                }}
+              />
             </>
           ) : (
             <>
@@ -197,10 +284,16 @@ export default function Browse() {
                   <h2>Scale with Studio</h2>
                   <p>Boost up the development process using reusable components.</p>
                 </div>
-                <Link to="/studio" className="btn btn-primary">Download Studio</Link>
-                <button className="btn btn-secondary filters-toggle" onClick={() => setFiltersOpen(true)}><Icon name="filter" /> Filters</button>
+                <Link to="/studio" className="btn btn-primary">
+                  Download Studio
+                </Link>
+                <button className="btn btn-secondary filters-toggle" onClick={() => setFiltersOpen(true)}>
+                  <Icon name="filter" /> Filters
+                </button>
               </div>
-              {sections.map((s) => <Section key={s.title} {...s} />)}
+              {sections.map((s) => (
+                <Section key={s.title} {...s} />
+              ))}
             </>
           )}
         </div>
@@ -208,24 +301,47 @@ export default function Browse() {
         <aside className={`filters ${filtersOpen ? 'open' : ''}`} aria-label="Filters">
           <div className="filters-head">
             <h2>Filters</h2>
-            <button className="icon-btn close-filters" onClick={() => setFiltersOpen(false)} aria-label="Close filters"><Icon name="close" /></button>
+            <button className="icon-btn close-filters" onClick={() => setFiltersOpen(false)} aria-label="Close filters">
+              <Icon name="close" />
+            </button>
           </div>
           <fieldset className="fgroup">
             <legend>Compatibility</legend>
-            <select value={f.version} onChange={(e) => setOne('version', e.target.value)} aria-label="Compatible Studio version">
+            <select
+              value={f.version}
+              onChange={(e) => setOne('version', e.target.value)}
+              aria-label="Compatible Studio version"
+            >
               <option value="">Select Version</option>
-              {PLATFORM_VERSIONS.map((v) => <option key={v} value={v}>Studio {v}</option>)}
+              {PLATFORM_VERSIONS.map((v) => (
+                <option key={v} value={v}>
+                  Studio {v}
+                </option>
+              ))}
             </select>
           </fieldset>
           <CheckGroup title="Content Type" name="type" options={TYPES} selected={f.type} onToggle={toggle} />
           <CheckGroup title="Support" name="support" options={SUPPORT_FILTERS} selected={f.support} onToggle={toggle} />
-          <CheckGroup title="Category" name="category" options={CATEGORIES} selected={f.category} onToggle={toggle} initial={5} />
+          <CheckGroup
+            title="Category"
+            name="category"
+            options={CATEGORIES}
+            selected={f.category}
+            onToggle={toggle}
+            initial={5}
+          />
           <CheckGroup title="Industry" name="industry" options={INDUSTRIES} selected={f.industry} onToggle={toggle} />
           <fieldset className="fgroup">
             <legend>Rating</legend>
             {[5, 4, 3].map((r) => (
               <label key={r} className={`rating-opt ${f.rating === r ? 'on' : ''}`}>
-                <input type="radio" name="rating" checked={f.rating === r} onChange={() => {}} onClick={() => setOne('rating', f.rating === r ? '' : String(r))} />
+                <input
+                  type="radio"
+                  name="rating"
+                  checked={f.rating === r}
+                  onChange={() => {}}
+                  onClick={() => setOne('rating', f.rating === r ? '' : String(r))}
+                />
                 <Stars value={r} /> <span>{r === 5 ? '5 stars' : `${r}+ stars`}</span>
               </label>
             ))}

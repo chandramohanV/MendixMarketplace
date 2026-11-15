@@ -3,17 +3,18 @@ import type { Component, ComponentType, LicenseModel, Publisher, Release, Review
 
 function mulberry32(a: number): () => number {
   return function () {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 const rand = mulberry32(42);
-const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
+const pick = <T>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
 // Fisher–Yates: always consumes the same number of random values, so the
 // generated data is identical in every JS engine (a random sort comparator is not).
-const pickN = <T,>(arr: readonly T[], n: number): T[] => {
+const pickN = <T>(arr: readonly T[], n: number): T[] => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -23,11 +24,32 @@ const pickN = <T,>(arr: readonly T[], n: number): T[] => {
 };
 const int = (min: number, max: number): number => Math.floor(rand() * (max - min + 1)) + min;
 
-export const TYPES: ComponentType[] = ['Module', 'Widget', 'Service', 'Solution', 'Sample', 'Starter App', 'Industry Template'];
+export const TYPES: ComponentType[] = [
+  'Module',
+  'Widget',
+  'Service',
+  'Solution',
+  'Sample',
+  'Starter App',
+  'Industry Template',
+];
 export const CATEGORIES: string[] = [
-  'Data', 'Connectors', 'Artificial Intelligence', 'Authentication', 'Agents',
-  'Charts', 'Communication', 'Documents', 'IoT', 'Maps & Location', 'Mobile', 'Payments', 'Security',
-  'User Interface', 'Utility', 'Workflow',
+  'Data',
+  'Connectors',
+  'Artificial Intelligence',
+  'Authentication',
+  'Agents',
+  'Charts',
+  'Communication',
+  'Documents',
+  'IoT',
+  'Maps & Location',
+  'Mobile',
+  'Payments',
+  'Security',
+  'User Interface',
+  'Utility',
+  'Workflow',
 ];
 export const SUPPORT: SupportLevel[] = ['Platform', 'Partner', 'Community', 'Deprecated'];
 export const SUPPORT_INFO: Record<SupportLevel, string> = {
@@ -38,7 +60,15 @@ export const SUPPORT_INFO: Record<SupportLevel, string> = {
 };
 /** Newest first. */
 export const PLATFORM_VERSIONS: string[] = ['11.5', '11.0', '10.24', '10.18', '10.12', '9.24'];
-export const INDUSTRIES: string[] = ['Agnostic', 'Insurance', 'Retail', 'Manufacturing Industries', 'Financial Services', 'Healthcare', 'Public Sector'];
+export const INDUSTRIES: string[] = [
+  'Agnostic',
+  'Insurance',
+  'Retail',
+  'Manufacturing Industries',
+  'Financial Services',
+  'Healthcare',
+  'Public Sector',
+];
 export const LICENSES: LicenseModel[] = ['Free', 'Paid', 'Free trial'];
 export const LICENSE_TYPES: string[] = ['Apache V2', 'MIT', 'Commercial', 'BSD', 'GPL v3'];
 
@@ -57,13 +87,96 @@ const PUBLISHERS: Publisher[] = [
 ];
 
 const NAME_PARTS: Record<ComponentType, string[]> = {
-  Module: ['Excel Importer', 'Email Connector', 'Data Grid Export', 'Audit Trail', 'Encryption', 'Community Commons', 'SAML Single Sign-On', 'OIDC SSO', 'Scheduled Job Manager', 'Deep Link', 'PDF Generator', 'Feedback', 'Forgot Password', 'Data Importer', 'Process Queue', 'Unit Testing', 'Logging Toolkit', 'Model Reflection', 'Workflow Commons', 'Document Templates'],
-  Widget: ['Data Grid 2', 'Rich Text Editor', 'Charts Pro', 'Calendar', 'Progress Circle', 'Star Rating', 'Image Crop', 'Signature Pad', 'Kanban Board', 'Tree View', 'Color Picker', 'Timeline', 'Badge Button', 'Range Slider', 'Maps', 'Accordion', 'Carousel', 'QR Code Scanner', 'Gantt Chart', 'Drag & Drop List'],
-  Service: ['REST Consume Kit', 'Salesforce Connector', 'SAP OData Connector', 'Azure Blob Storage', 'AWS S3 Connector', 'OpenAI Connector', 'Snowflake Connector', 'Kafka Connector', 'Slack Connector', 'Twilio SMS', 'Stripe Payments', 'Google Sheets', 'Microsoft Teams', 'MQTT Client', 'Databricks', 'ServiceNow Connector', 'Jira Connector', 'Bedrock Connector'],
+  Module: [
+    'Excel Importer',
+    'Email Connector',
+    'Data Grid Export',
+    'Audit Trail',
+    'Encryption',
+    'Community Commons',
+    'SAML Single Sign-On',
+    'OIDC SSO',
+    'Scheduled Job Manager',
+    'Deep Link',
+    'PDF Generator',
+    'Feedback',
+    'Forgot Password',
+    'Data Importer',
+    'Process Queue',
+    'Unit Testing',
+    'Logging Toolkit',
+    'Model Reflection',
+    'Workflow Commons',
+    'Document Templates',
+  ],
+  Widget: [
+    'Data Grid 2',
+    'Rich Text Editor',
+    'Charts Pro',
+    'Calendar',
+    'Progress Circle',
+    'Star Rating',
+    'Image Crop',
+    'Signature Pad',
+    'Kanban Board',
+    'Tree View',
+    'Color Picker',
+    'Timeline',
+    'Badge Button',
+    'Range Slider',
+    'Maps',
+    'Accordion',
+    'Carousel',
+    'QR Code Scanner',
+    'Gantt Chart',
+    'Drag & Drop List',
+  ],
+  Service: [
+    'REST Consume Kit',
+    'Salesforce Connector',
+    'SAP OData Connector',
+    'Azure Blob Storage',
+    'AWS S3 Connector',
+    'OpenAI Connector',
+    'Snowflake Connector',
+    'Kafka Connector',
+    'Slack Connector',
+    'Twilio SMS',
+    'Stripe Payments',
+    'Google Sheets',
+    'Microsoft Teams',
+    'MQTT Client',
+    'Databricks',
+    'ServiceNow Connector',
+    'Jira Connector',
+    'Bedrock Connector',
+  ],
   Solution: ['Supplier Portal', 'Quality Inspection', 'Maintenance Planner', 'Contract Manager', 'Inventory Hub'],
-  Sample: ['GenAI Showcase App', 'Design Patterns Sample', 'Workflow Showcase', 'Mobile Showcase', 'Data Grid Samples', 'Agent Playground'],
-  'Starter App': ['AI Bot Starter App', 'Agent Builder Starter App', 'Customer Portal Starter', 'Employee Onboarding', 'Field Service App', 'Asset Management', 'Expense Tracker', 'Incident Reporting'],
-  'Industry Template': ['Claims Processing', 'Loan Origination', 'Patient Intake', 'Policy Administration', 'Retail Store Ops'],
+  Sample: [
+    'GenAI Showcase App',
+    'Design Patterns Sample',
+    'Workflow Showcase',
+    'Mobile Showcase',
+    'Data Grid Samples',
+    'Agent Playground',
+  ],
+  'Starter App': [
+    'AI Bot Starter App',
+    'Agent Builder Starter App',
+    'Customer Portal Starter',
+    'Employee Onboarding',
+    'Field Service App',
+    'Asset Management',
+    'Expense Tracker',
+    'Incident Reporting',
+  ],
+  'Industry Template': [
+    'Claims Processing',
+    'Loan Origination',
+    'Patient Intake',
+    'Policy Administration',
+    'Retail Store Ops',
+  ],
 };
 
 const TYPE_CATEGORY: Record<ComponentType, string[]> = {
@@ -76,7 +189,18 @@ const TYPE_CATEGORY: Record<ComponentType, string[]> = {
   'Industry Template': ['Workflow', 'Documents'],
 };
 
-export const COLORS = ['#264ae5', '#0595db', '#3cb33d', '#e46b2b', '#a347d0', '#d43957', '#1aa59e', '#f2a60c', '#5b6aff', '#e2367c'];
+export const COLORS = [
+  '#264ae5',
+  '#0595db',
+  '#3cb33d',
+  '#e46b2b',
+  '#a347d0',
+  '#d43957',
+  '#1aa59e',
+  '#f2a60c',
+  '#5b6aff',
+  '#e2367c',
+];
 export const ICONS = ['◆', '▲', '●', '■', '★', '⬢', '⬣', '✦', '❖', '⚙', '⚡', '☁', '⌘', '◎'];
 
 const FEATURE_POOL = [
@@ -96,7 +220,20 @@ const FEATURE_POOL = [
   'Responsive across all screen sizes',
 ];
 
-const REVIEWERS = ['Anna K.', 'Ravi S.', 'Jonas M.', 'Priya R.', 'Tom V.', 'Lena B.', 'Carlos D.', 'Mei L.', 'Oliver P.', 'Fatima Z.', 'Sam W.', 'Noah H.'];
+const REVIEWERS = [
+  'Anna K.',
+  'Ravi S.',
+  'Jonas M.',
+  'Priya R.',
+  'Tom V.',
+  'Lena B.',
+  'Carlos D.',
+  'Mei L.',
+  'Oliver P.',
+  'Fatima Z.',
+  'Sam W.',
+  'Noah H.',
+];
 const REVIEW_TEXT: [title: string, body: string][] = [
   ['Works great', 'Set it up in ten minutes and it just worked. Documentation is clear.'],
   ['Very useful', 'Saved us a lot of development time. Would love a few more configuration options.'],
@@ -109,7 +246,11 @@ const REVIEW_TEXT: [title: string, body: string][] = [
 ];
 
 export function slugify(s: string): string {
-  return s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return s
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
 function dateDaysAgo(days: number): string {
@@ -124,10 +265,18 @@ function buildComponents(): Component[] {
   for (const type of TYPES) {
     for (const baseName of NAME_PARTS[type]) {
       const publisher = type === 'Sample' || rand() < 0.18 ? PUBLISHERS[10] : pick(PUBLISHERS.slice(0, 10));
-      let support: SupportLevel = publisher.name === 'Platform Team' ? 'Platform' : publisher.verified ? pick<SupportLevel>(['Partner', 'Partner', 'Community']) : 'Community';
+      let support: SupportLevel =
+        publisher.name === 'Platform Team'
+          ? 'Platform'
+          : publisher.verified
+            ? pick<SupportLevel>(['Partner', 'Partner', 'Community'])
+            : 'Community';
       if (rand() < 0.06) support = 'Deprecated';
       const category = pick(TYPE_CATEGORY[type]);
-      const license: LicenseModel = publisher.name === 'Platform Team' ? 'Free' : pick<LicenseModel>(['Free', 'Free', 'Free', 'Paid', 'Free trial']);
+      const license: LicenseModel =
+        publisher.name === 'Platform Team'
+          ? 'Free'
+          : pick<LicenseModel>(['Free', 'Free', 'Free', 'Paid', 'Free trial']);
       const ratingCount = int(0, 240);
       const rating = ratingCount === 0 ? 0 : Math.round((3 + rand() * 2) * 10) / 10;
       const major = int(1, 9);
@@ -139,17 +288,25 @@ function buildComponents(): Component[] {
       const releases: Release[] = Array.from({ length: int(3, 7) }, (_, i) => ({
         version: `${major}.${Math.max(0, minor - i)}.${i === 0 ? patch : int(0, 9)}`,
         date: dateDaysAgo(updatedDays + i * int(20, 90)),
-        minPlatform: i === 0 ? minVersion : PLATFORM_VERSIONS[Math.min(PLATFORM_VERSIONS.length - 1, PLATFORM_VERSIONS.indexOf(minVersion) + Math.floor(i / 2))],
-        notes: pickN([
-          'Fixed an issue where the component failed to load in certain browsers.',
-          'Added support for the latest platform version.',
-          'Improved performance for large data sets.',
-          'Updated third-party libraries to address security advisories.',
-          'Added new configuration options.',
-          'Improved accessibility labels.',
-          'Fixed layout issues on small screens.',
-          'Initial release.',
-        ], int(1, 3)),
+        minPlatform:
+          i === 0
+            ? minVersion
+            : PLATFORM_VERSIONS[
+                Math.min(PLATFORM_VERSIONS.length - 1, PLATFORM_VERSIONS.indexOf(minVersion) + Math.floor(i / 2))
+              ],
+        notes: pickN(
+          [
+            'Fixed an issue where the component failed to load in certain browsers.',
+            'Added support for the latest platform version.',
+            'Improved performance for large data sets.',
+            'Updated third-party libraries to address security advisories.',
+            'Added new configuration options.',
+            'Improved accessibility labels.',
+            'Fixed layout issues on small screens.',
+            'Initial release.',
+          ],
+          int(1, 3),
+        ),
       }));
       const reviews: Review[] = Array.from({ length: Math.min(ratingCount, int(2, 6)) }, () => {
         const [title, body] = pick(REVIEW_TEXT);
@@ -188,7 +345,23 @@ function buildComponents(): Component[] {
         color: pick(COLORS),
         icon: pick(ICONS),
         featured: rand() < 0.12,
-        tags: pickN(['open source', 'low-code', 'enterprise', 'mobile', 'web', 'native', 'ai', 'data', 'security', 'ux', 'cloud', 'api'], int(2, 4)),
+        tags: pickN(
+          [
+            'open source',
+            'low-code',
+            'enterprise',
+            'mobile',
+            'web',
+            'native',
+            'ai',
+            'data',
+            'security',
+            'ux',
+            'cloud',
+            'api',
+          ],
+          int(2, 4),
+        ),
         short: shortDescription(type, name, category),
         features: pickN(FEATURE_POOL, int(4, 6)),
         releases,
@@ -229,5 +402,10 @@ export function formatNumber(n: number): string {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
 }

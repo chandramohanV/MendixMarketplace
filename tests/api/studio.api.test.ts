@@ -11,9 +11,18 @@ let srv: RunningServer;
 let dir: string;
 let base: string;
 
-interface Res { status: number; headers: Headers; body: any } // eslint-disable-line @typescript-eslint/no-explicit-any -- test responses are inspected ad hoc
+interface Res {
+  status: number;
+  headers: Headers;
+  body: any;
+} // eslint-disable-line @typescript-eslint/no-explicit-any -- test responses are inspected ad hoc
 
-async function call(method: string, p: string, body?: unknown, opts: { raw?: string; headers?: Record<string, string> } = {}): Promise<Res> {
+async function call(
+  method: string,
+  p: string,
+  body?: unknown,
+  opts: { raw?: string; headers?: Record<string, string> } = {},
+): Promise<Res> {
   const hasBody = body !== undefined || opts.raw !== undefined;
   const res = await fetch(base + p, {
     method,
@@ -24,7 +33,11 @@ async function call(method: string, p: string, body?: unknown, opts: { raw?: str
   return { status: res.status, headers: res.headers, body: text ? JSON.parse(text) : null };
 }
 const get = (p: string) => call('GET', p);
-const tomorrow = () => { const d = new Date(); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
+const tomorrow = () => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
 const allReleases = async () => (await get('/releases?pageSize=100&page=1')).body.total as number;
 const latestVersion = async () => (await get('/summary')).body.latest.version as string;
 
@@ -136,18 +149,33 @@ describe('GET /releases/:version and /summary', () => {
     const r = await get('/summary');
     assert.equal(r.body.latest.version, '11.16.1');
     assert.equal(r.body.recommendedLts.type, 'LTS');
-    assert.ok(r.body.supportedLines.some((l: { value: string; label: string }) => l.value === '9.24' && l.label === '9.24 (LTS)'));
+    assert.ok(
+      r.body.supportedLines.some(
+        (l: { value: string; label: string }) => l.value === '9.24' && l.label === '9.24 (LTS)',
+      ),
+    );
     assert.deepEqual(Object.keys(r.body.types).sort(), ['BETA', 'LATEST', 'LTS', 'MTS']);
   });
 });
 
 describe('POST /releases', () => {
   test('creates with 201, Location header and derived fields', async () => {
-    const r = await call('POST', '/releases', { version: '11.16.2', date: '2026-11-10', notes: { Fixes: ['  Fixed a thing.  '] } });
+    const r = await call('POST', '/releases', {
+      version: '11.16.2',
+      date: '2026-11-10',
+      notes: { Fixes: ['  Fixed a thing.  '] },
+    });
     assert.equal(r.status, 201);
     assert.equal(r.headers.get('location'), '/api/studio/releases/11.16.2');
     assert.deepEqual(
-      { major: r.body.major, minor: r.body.minor, patch: r.body.patch, line: r.body.line, type: r.body.type, mac: r.body.mac },
+      {
+        major: r.body.major,
+        minor: r.body.minor,
+        patch: r.body.patch,
+        line: r.body.line,
+        type: r.body.type,
+        mac: r.body.mac,
+      },
       { major: 11, minor: 16, patch: 2, line: '11.16', type: null, mac: true },
     );
     assert.deepEqual(r.body.notes, { Fixes: ['Fixed a thing.'] });
@@ -186,18 +214,38 @@ describe('POST /releases', () => {
     const r21 = await call('POST', '/releases', { version: '11.31.0', date: '2026-01-01', notes: items21 });
     assertError(r21, 422);
     assert.ok(detailFields(r21).includes('notes.Fixes'));
-    const empty = await call('POST', '/releases', { version: '11.31.0', date: '2026-01-01', notes: { Fixes: ['ok', '   '] } });
+    const empty = await call('POST', '/releases', {
+      version: '11.31.0',
+      date: '2026-01-01',
+      notes: { Fixes: ['ok', '   '] },
+    });
     assertError(empty, 422);
     assert.ok(detailFields(empty).includes('notes.Fixes.1'));
-    const long = await call('POST', '/releases', { version: '11.31.0', date: '2026-01-01', notes: { Fixes: ['y'.repeat(301)] } });
+    const long = await call('POST', '/releases', {
+      version: '11.31.0',
+      date: '2026-01-01',
+      notes: { Fixes: ['y'.repeat(301)] },
+    });
     assertError(long, 422);
     assert.ok(detailFields(long).includes('notes.Fixes.0'));
-    const ok = await call('POST', '/releases', { version: '11.31.0', date: '2026-01-01', notes: { ...Object.fromEntries(Array.from({ length: 5 }, (_, i) => [`S${i}`, Array.from({ length: 20 }, () => 'z'.repeat(300))])) } });
+    const ok = await call('POST', '/releases', {
+      version: '11.31.0',
+      date: '2026-01-01',
+      notes: {
+        ...Object.fromEntries(
+          Array.from({ length: 5 }, (_, i) => [`S${i}`, Array.from({ length: 20 }, () => 'z'.repeat(300))]),
+        ),
+      },
+    });
     assert.equal(ok.status, 201, 'exactly at the limits is accepted');
   });
   test('derived and unknown fields are rejected', async () => {
     for (const extra of [{ major: 11 }, { line: '11.40' }, { patch: 0 }, { color: 'blue' }]) {
-      assertError(await call('POST', '/releases', { version: '11.40.0', date: '2026-01-01', ...extra }), 422, 'validation_failed');
+      assertError(
+        await call('POST', '/releases', { version: '11.40.0', date: '2026-01-01', ...extra }),
+        422,
+        'validation_failed',
+      );
     }
   });
   test('malformed JSON is 400; non-object body is 422', async () => {
@@ -209,7 +257,12 @@ describe('POST /releases', () => {
 
 describe('PUT and PATCH /releases/:version', () => {
   test('PUT replaces type, date, mac and notes', async () => {
-    const r = await call('PUT', '/releases/11.16.2', { type: null, date: '2026-11-11', mac: false, notes: { 'New Features': ['Shiny.'] } });
+    const r = await call('PUT', '/releases/11.16.2', {
+      type: null,
+      date: '2026-11-11',
+      mac: false,
+      notes: { 'New Features': ['Shiny.'] },
+    });
     assert.equal(r.status, 200);
     assert.equal(r.body.date, '2026-11-11');
     assert.equal(r.body.mac, false);
@@ -219,7 +272,12 @@ describe('PUT and PATCH /releases/:version', () => {
     const r = await call('PUT', '/releases/11.16.2', { version: '11.16.3', type: null, date: '2026-11-11', notes: {} });
     assertError(r, 422, 'validation_failed');
     assert.deepEqual(detailFields(r), ['version']);
-    assert.equal((await call('PUT', '/releases/11.16.2', { version: '11.16.2', type: null, date: '2026-11-11', notes: {} })).status, 200, 'same version is allowed');
+    assert.equal(
+      (await call('PUT', '/releases/11.16.2', { version: '11.16.2', type: null, date: '2026-11-11', notes: {} }))
+        .status,
+      200,
+      'same version is allowed',
+    );
     const missing = await call('PUT', '/releases/11.16.2', { type: null });
     assertError(missing, 422);
     assert.ok(detailFields(missing).includes('date') && detailFields(missing).includes('notes'));
@@ -244,10 +302,14 @@ describe('LATEST rules', () => {
     const r = await call('PATCH', '/releases/11.16.2', { type: 'LATEST' });
     assert.equal(r.status, 200);
     assert.equal(await latestVersion(), '11.16.2');
-    assert.equal((await get('/releases/11.16.1')).body.type, null, 'line 11.16 has no LTS/MTS, so it falls back to none');
+    assert.equal(
+      (await get('/releases/11.16.1')).body.type,
+      null,
+      'line 11.16 has no LTS/MTS, so it falls back to none',
+    );
     assert.equal((await get('/releases?type=LATEST')).body.total, 1);
   });
-  test('a demoted LATEST falls back to its line\'s LTS/MTS type', async () => {
+  test("a demoted LATEST falls back to its line's LTS/MTS type", async () => {
     const lts = (await get('/summary')).body.recommendedLts.version; // e.g. 11.12.5 (LTS)
     await call('PATCH', `/releases/${lts}`, { type: 'LATEST' });
     assert.equal(await latestVersion(), lts);
@@ -263,7 +325,11 @@ describe('LATEST rules', () => {
   test('the LATEST release cannot lose its type without a replacement', async () => {
     assertError(await call('PATCH', '/releases/11.16.5', { type: null }), 409, 'latest_required');
     assertError(await call('PATCH', '/releases/11.16.5', { type: 'LTS' }), 409, 'latest_required');
-    assertError(await call('PUT', '/releases/11.16.5', { type: 'MTS', date: '2026-11-13', notes: {} }), 409, 'latest_required');
+    assertError(
+      await call('PUT', '/releases/11.16.5', { type: 'MTS', date: '2026-11-13', notes: {} }),
+      409,
+      'latest_required',
+    );
     assert.equal(await latestVersion(), '11.16.5');
   });
   test('a BETA release cannot become LATEST', async () => {
@@ -292,16 +358,26 @@ describe('DELETE /releases/:version', () => {
 describe('persistence and concurrency', () => {
   test('20 parallel creates: no lost writes, valid file, no temp files left', async () => {
     const before = await allReleases();
-    const results = await Promise.all(Array.from({ length: 20 }, (_, i) => call('POST', '/releases', { version: `12.0.${i}`, date: '2026-11-01' })));
-    assert.deepEqual(results.map((r) => r.status), Array(20).fill(201));
+    const results = await Promise.all(
+      Array.from({ length: 20 }, (_, i) => call('POST', '/releases', { version: `12.0.${i}`, date: '2026-11-01' })),
+    );
+    assert.deepEqual(
+      results.map((r) => r.status),
+      Array(20).fill(201),
+    );
     assert.equal(await allReleases(), before + 20);
     const file = JSON.parse(await fs.readFile(path.join(dir, 'releases.json'), 'utf8'));
     assert.equal(file.length, before + 20);
     assert.equal(file.filter((r: { version: string }) => r.version.startsWith('12.0.')).length, 20);
-    assert.deepEqual((await fs.readdir(dir)).filter((f) => f.endsWith('.tmp')), []);
+    assert.deepEqual(
+      (await fs.readdir(dir)).filter((f) => f.endsWith('.tmp')),
+      [],
+    );
   });
   test('parallel conflicting creates: exactly one wins', async () => {
-    const results = await Promise.all(Array.from({ length: 10 }, () => call('POST', '/releases', { version: '12.1.0', date: '2026-11-01' })));
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => call('POST', '/releases', { version: '12.1.0', date: '2026-11-01' })),
+    );
     assert.equal(results.filter((r) => r.status === 201).length, 1);
     assert.equal(results.filter((r) => r.status === 409).length, 9);
   });

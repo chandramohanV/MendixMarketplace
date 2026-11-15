@@ -20,13 +20,35 @@ export default function Publishers() {
       <div className="publisher-grid">
         {rows.map((p) => (
           <Link key={p.name} to={`/components?publisher=${encodeURIComponent(p.name)}`} className="card publisher-card">
-            <div className="avatar lg">{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
-            <h3>{p.name} {p.verified && <span className="verified" title="Verified publisher">✔</span>}</h3>
+            <div className="avatar lg">
+              {p.name
+                .split(' ')
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join('')}
+            </div>
+            <h3>
+              {p.name}{' '}
+              {p.verified && (
+                <span className="verified" title="Verified publisher">
+                  ✔
+                </span>
+              )}
+            </h3>
             <div className="muted small">{p.country}</div>
             <div className="pub-stats">
-              <div><b>{p.count}</b><span>components</span></div>
-              <div><b>{formatNumber(p.downloads)}</b><span>downloads</span></div>
-              <div><b>{p.rating ? p.rating.toFixed(1) : '–'}</b><span>avg rating</span></div>
+              <div>
+                <b>{p.count}</b>
+                <span>components</span>
+              </div>
+              <div>
+                <b>{formatNumber(p.downloads)}</b>
+                <span>downloads</span>
+              </div>
+              <div>
+                <b>{p.rating ? p.rating.toFixed(1) : '–'}</b>
+                <span>avg rating</span>
+              </div>
             </div>
           </Link>
         ))}

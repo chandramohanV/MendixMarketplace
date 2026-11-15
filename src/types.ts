@@ -1,6 +1,7 @@
 // Shared domain types for the marketplace.
 
-export type ComponentType = 'Module' | 'Widget' | 'Service' | 'Solution' | 'Sample' | 'Starter App' | 'Industry Template';
+export type ComponentType =
+  'Module' | 'Widget' | 'Service' | 'Solution' | 'Sample' | 'Starter App' | 'Industry Template';
 export type SupportLevel = 'Platform' | 'Partner' | 'Community' | 'Deprecated';
 export type LicenseModel = 'Free' | 'Paid' | 'Free trial';
 export type SubmissionStatus = 'pending' | 'published' | 'rejected';

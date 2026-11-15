@@ -1,0 +1,7 @@
+# Generated, vendored or binary content
+dist/
+node_modules/
+package-lock.json
+server/data/
+docs/screenshots/
+coverage/

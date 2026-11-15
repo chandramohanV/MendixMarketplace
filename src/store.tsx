@@ -34,7 +34,11 @@ function load<T>(key: string, fallback: T, isValid: (v: unknown) => boolean): T 
   }
 }
 function save(key: string, value: unknown): void {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable: keep in memory only */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage unavailable: keep in memory only */
+  }
 }
 const isObject = (v: unknown) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -47,12 +51,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Mirror of the latest submissions so actions can return the record they create synchronously.
   const submissionsRef = useRef(submissions);
-  useEffect(() => { submissionsRef.current = submissions; }, [submissions]);
+  useEffect(() => {
+    submissionsRef.current = submissions;
+  }, [submissions]);
 
-  useEffect(() => { save('mp.favorites', favorites); }, [favorites]);
-  useEffect(() => { save('mp.reviews', userReviews); }, [userReviews]);
-  useEffect(() => { save('mp.downloads', downloads); }, [downloads]);
-  useEffect(() => { save('mp.submissions', submissions); }, [submissions]);
+  useEffect(() => {
+    save('mp.favorites', favorites);
+  }, [favorites]);
+  useEffect(() => {
+    save('mp.reviews', userReviews);
+  }, [userReviews]);
+  useEffect(() => {
+    save('mp.downloads', downloads);
+  }, [downloads]);
+  useEffect(() => {
+    save('mp.submissions', submissions);
+  }, [submissions]);
 
   const notify = useCallback((message: string) => {
     setToast({ message, key: Date.now() });
@@ -64,76 +78,101 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const toggleFavorite = useCallback((id: number, name: string) => {
-    setFavorites((prev) => {
-      const has = prev.includes(id);
-      notify(has ? `Removed "${name}" from favorites` : `Added "${name}" to favorites`);
-      return has ? prev.filter((x) => x !== id) : [...prev, id];
-    });
-  }, [notify]);
+  const toggleFavorite = useCallback(
+    (id: number, name: string) => {
+      setFavorites((prev) => {
+        const has = prev.includes(id);
+        notify(has ? `Removed "${name}" from favorites` : `Added "${name}" to favorites`);
+        return has ? prev.filter((x) => x !== id) : [...prev, id];
+      });
+    },
+    [notify],
+  );
 
-  const addReview = useCallback((id: number, review: Review) => {
-    setUserReviews((prev) => ({ ...prev, [id]: [review, ...(prev[id] || [])] }));
-    notify('Thanks! Your review has been posted.');
-  }, [notify]);
+  const addReview = useCallback(
+    (id: number, review: Review) => {
+      setUserReviews((prev) => ({ ...prev, [id]: [review, ...(prev[id] || [])] }));
+      notify('Thanks! Your review has been posted.');
+    },
+    [notify],
+  );
 
-  const recordDownload = useCallback((id: number, version: string, name: string) => {
-    setDownloads((prev) => [{ id, version, date: new Date().toISOString() }, ...prev].slice(0, 50));
-    notify(`Downloading ${name} v${version}…`);
-  }, [notify]);
+  const recordDownload = useCallback(
+    (id: number, version: string, name: string) => {
+      setDownloads((prev) => [{ id, version, date: new Date().toISOString() }, ...prev].slice(0, 50));
+      notify(`Downloading ${name} v${version}…`);
+    },
+    [notify],
+  );
 
   const commitSubmissions = useCallback((next: Submission[]) => {
     submissionsRef.current = next;
     setSubmissions(next);
   }, []);
 
-  const submitComponent = useCallback((input: SubmissionInput): Submission => {
-    const current = submissionsRef.current;
-    const id = Math.max(SUBMISSION_ID_BASE, ...current.map((s) => s.id)) + 1;
-    const now = new Date();
-    const submission: Submission = {
-      ...input,
-      name: input.name.trim(),
-      id,
-      slug: `${id}-${slugify(input.name.trim())}`,
-      status: 'pending',
-      submittedAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-      publishAt: new Date(now.getTime() + getAutoPublishMs()).toISOString(),
-    };
-    commitSubmissions([submission, ...current]);
-    return submission;
-  }, [commitSubmissions]);
+  const submitComponent = useCallback(
+    (input: SubmissionInput): Submission => {
+      const current = submissionsRef.current;
+      const id = Math.max(SUBMISSION_ID_BASE, ...current.map((s) => s.id)) + 1;
+      const now = new Date();
+      const submission: Submission = {
+        ...input,
+        name: input.name.trim(),
+        id,
+        slug: `${id}-${slugify(input.name.trim())}`,
+        status: 'pending',
+        submittedAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        publishAt: new Date(now.getTime() + getAutoPublishMs()).toISOString(),
+      };
+      commitSubmissions([submission, ...current]);
+      return submission;
+    },
+    [commitSubmissions],
+  );
 
-  const updateSubmission = useCallback((id: number, input: SubmissionInput): Submission | null => {
-    const current = submissionsRef.current;
-    const existing = current.find((s) => s.id === id);
-    if (!existing || existing.status !== 'pending') return null;
-    const now = new Date();
-    const updated: Submission = {
-      ...existing,
-      ...input,
-      name: input.name.trim(),
-      slug: `${id}-${slugify(input.name.trim())}`,
-      updatedAt: now.toISOString(),
-      publishAt: new Date(now.getTime() + getAutoPublishMs()).toISOString(),
-    };
-    commitSubmissions(current.map((s) => (s.id === id ? updated : s)));
-    return updated;
-  }, [commitSubmissions]);
+  const updateSubmission = useCallback(
+    (id: number, input: SubmissionInput): Submission | null => {
+      const current = submissionsRef.current;
+      const existing = current.find((s) => s.id === id);
+      if (!existing || existing.status !== 'pending') return null;
+      const now = new Date();
+      const updated: Submission = {
+        ...existing,
+        ...input,
+        name: input.name.trim(),
+        slug: `${id}-${slugify(input.name.trim())}`,
+        updatedAt: now.toISOString(),
+        publishAt: new Date(now.getTime() + getAutoPublishMs()).toISOString(),
+      };
+      commitSubmissions(current.map((s) => (s.id === id ? updated : s)));
+      return updated;
+    },
+    [commitSubmissions],
+  );
 
-  const withdrawSubmission = useCallback((id: number) => {
-    const s = submissionsRef.current.find((x) => x.id === id);
-    commitSubmissions(submissionsRef.current.filter((x) => x.id !== id));
-    if (s) notify(`"${s.name}" was withdrawn`);
-  }, [commitSubmissions, notify]);
+  const withdrawSubmission = useCallback(
+    (id: number) => {
+      const s = submissionsRef.current.find((x) => x.id === id);
+      commitSubmissions(submissionsRef.current.filter((x) => x.id !== id));
+      if (s) notify(`"${s.name}" was withdrawn`);
+    },
+    [commitSubmissions, notify],
+  );
 
-  const setSubmissionStatus = useCallback((id: number, status: SubmissionStatus) => {
-    const s = submissionsRef.current.find((x) => x.id === id);
-    if (!s || s.status === status) return;
-    commitSubmissions(submissionsRef.current.map((x) => (x.id === id ? { ...x, status, publishAt: null, updatedAt: new Date().toISOString() } : x)));
-    notify(status === 'published' ? `"${s.name}" was approved and is now published` : `"${s.name}" was rejected`);
-  }, [commitSubmissions, notify]);
+  const setSubmissionStatus = useCallback(
+    (id: number, status: SubmissionStatus) => {
+      const s = submissionsRef.current.find((x) => x.id === id);
+      if (!s || s.status === status) return;
+      commitSubmissions(
+        submissionsRef.current.map((x) =>
+          x.id === id ? { ...x, status, publishAt: null, updatedAt: new Date().toISOString() } : x,
+        ),
+      );
+      notify(status === 'published' ? `"${s.name}" was approved and is now published` : `"${s.name}" was rejected`);
+    },
+    [commitSubmissions, notify],
+  );
 
   // Demo reviewer: publish each pending submission once its publishAt time arrives.
   useEffect(() => {
@@ -150,14 +189,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [submissions, setSubmissionStatus]);
 
   const value: StoreValue = {
-    favorites, toggleFavorite, userReviews, addReview, downloads, recordDownload,
-    submissions, submitComponent, updateSubmission, withdrawSubmission, setSubmissionStatus, notify,
+    favorites,
+    toggleFavorite,
+    userReviews,
+    addReview,
+    downloads,
+    recordDownload,
+    submissions,
+    submitComponent,
+    updateSubmission,
+    withdrawSubmission,
+    setSubmissionStatus,
+    notify,
   };
 
   return (
     <StoreContext.Provider value={value}>
       {children}
-      {toast && <div className="toast" key={toast.key} role="status">{toast.message}</div>}
+      {toast && (
+        <div className="toast" key={toast.key} role="status">
+          {toast.message}
+        </div>
+      )}
     </StoreContext.Provider>
   );
 }

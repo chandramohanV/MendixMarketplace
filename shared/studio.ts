@@ -29,21 +29,35 @@ export function parseVersion(version: string): { major: number; minor: number; p
   return { major, minor, patch, line: `${major}.${minor}` };
 }
 
-export const compareVersionsDesc = (a: { major: number; minor: number; patch: number }, b: { major: number; minor: number; patch: number }) =>
-  b.major - a.major || b.minor - a.minor || b.patch - a.patch;
+export const compareVersionsDesc = (
+  a: { major: number; minor: number; patch: number },
+  b: { major: number; minor: number; patch: number },
+) => b.major - a.major || b.minor - a.minor || b.patch - a.patch;
 
 // ---------- field schemas ----------
 const VersionSchema = z.string().trim().regex(VERSION_RE, 'Use semantic versioning, for example 11.2.0.');
-const DateSchema = z.string()
+const DateSchema = z
+  .string()
   .refine(isRealDate, 'Enter a real date in YYYY-MM-DD format.')
   .refine((s) => !isRealDate(s) || s <= todayISO(), 'Release date cannot be in the future.');
-const NoteItemSchema = z.string().trim()
+const NoteItemSchema = z
+  .string()
+  .trim()
   .min(1, 'Note items cannot be empty.')
   .max(LIMITS.itemLength, `Note items can be at most ${LIMITS.itemLength} characters.`);
-export const NotesSchema = z.record(
-  z.string().trim().min(1, 'Section names cannot be empty.').max(LIMITS.sectionNameLength, `Section names can be at most ${LIMITS.sectionNameLength} characters.`),
-  z.array(NoteItemSchema).min(1, 'Each section needs at least one item.').max(LIMITS.itemsPerSection, `Each section can have at most ${LIMITS.itemsPerSection} items.`),
-).refine((n) => Object.keys(n).length <= LIMITS.sections, `At most ${LIMITS.sections} note sections are allowed.`);
+export const NotesSchema = z
+  .record(
+    z
+      .string()
+      .trim()
+      .min(1, 'Section names cannot be empty.')
+      .max(LIMITS.sectionNameLength, `Section names can be at most ${LIMITS.sectionNameLength} characters.`),
+    z
+      .array(NoteItemSchema)
+      .min(1, 'Each section needs at least one item.')
+      .max(LIMITS.itemsPerSection, `Each section can have at most ${LIMITS.itemsPerSection} items.`),
+  )
+  .refine((n) => Object.keys(n).length <= LIMITS.sections, `At most ${LIMITS.sections} note sections are allowed.`);
 
 // ---------- stored / returned shapes ----------
 export const StudioReleaseSchema = z.object({
@@ -97,17 +111,22 @@ export const UpdateReleaseSchema = z.strictObject({
 });
 export type UpdateReleaseInput = z.input<typeof UpdateReleaseSchema>;
 
-export const PatchReleaseSchema = z.strictObject({
-  type: ReleaseTypeSchema.nullable().optional(),
-  date: DateSchema.optional(),
-  mac: z.boolean().optional(),
-  notes: NotesSchema.optional(),
-}).refine((v) => Object.keys(v).length > 0, 'Provide at least one of: type, date, mac, notes.');
+export const PatchReleaseSchema = z
+  .strictObject({
+    type: ReleaseTypeSchema.nullable().optional(),
+    date: DateSchema.optional(),
+    mac: z.boolean().optional(),
+    notes: NotesSchema.optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, 'Provide at least one of: type, date, mac, notes.');
 export type PatchReleaseInput = z.input<typeof PatchReleaseSchema>;
 
 export const ListQuerySchema = z.strictObject({
   q: z.string().trim().max(20).optional(),
-  line: z.string().regex(/^\d+\.\d+$/, 'line must look like 11.12').optional(),
+  line: z
+    .string()
+    .regex(/^\d+\.\d+$/, 'line must look like 11.12')
+    .optional(),
   type: z.enum([...RELEASE_TYPE_VALUES, 'none']).optional(),
   sort: z.enum(['version', 'date-asc', 'date-desc']).default('version'),
   page: z.coerce.number().int().min(1).default(1),
@@ -116,23 +135,37 @@ export const ListQuerySchema = z.strictObject({
 export type ListQuery = z.input<typeof ListQuerySchema>;
 
 // ---------- errors ----------
-export interface FieldError { field: string; message: string }
-export interface ApiErrorBody { error: { code: string; message: string; details?: FieldError[] } }
+export interface FieldError {
+  field: string;
+  message: string;
+}
+export interface ApiErrorBody {
+  error: { code: string; message: string; details?: FieldError[] };
+}
 export const ApiErrorSchema = z.object({
-  error: z.object({ code: z.string(), message: z.string(), details: z.array(z.object({ field: z.string(), message: z.string() })).optional() }),
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.array(z.object({ field: z.string(), message: z.string() })).optional(),
+  }),
 });
 
 /** Flattens Zod issues into `{ field, message }` with dotted paths (e.g. `notes.Fixes.2`). */
 export function toFieldErrors(error: z.ZodError): FieldError[] {
   return error.issues.map((i) => ({
     field: i.path.length ? i.path.map(String).join('.') : '(body)',
-    message: i.code === 'unrecognized_keys' ? `Unknown or read-only field(s): ${(i as { keys?: string[] }).keys?.join(', ')}` : i.message,
+    message:
+      i.code === 'unrecognized_keys'
+        ? `Unknown or read-only field(s): ${(i as { keys?: string[] }).keys?.join(', ')}`
+        : i.message,
   }));
 }
 
 /** Rules that need the parsed version (shared so the client can validate before sending). */
 export function macRuleError(version: string, mac: boolean | undefined): string | null {
   if (!VERSION_RE.test(version)) return null;
-  return mac === true && parseVersion(version).major < 10 ? 'Mac downloads are only available for Studio 10 and later.' : null;
+  return mac === true && parseVersion(version).major < 10
+    ? 'Mac downloads are only available for Studio 10 and later.'
+    : null;
 }
 export const defaultMac = (version: string): boolean => VERSION_RE.test(version) && parseVersion(version).major >= 10;

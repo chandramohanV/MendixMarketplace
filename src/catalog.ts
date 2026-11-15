@@ -8,7 +8,10 @@ export const SUBMITTER_NAME = 'Demo User';
 
 function hash(s: string): number {
   let h = 2166136261;
-  for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  for (const ch of s) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
   return h >>> 0;
 }
 
@@ -76,8 +79,10 @@ export function useCatalog(): Catalog {
       findById: (id) => all.find((c) => c.id === id),
       isNameTaken: (name, exceptSubmissionId) => {
         const n = norm(name);
-        return COMPONENTS.some((c) => norm(c.name) === n)
-          || submissions.some((s) => s.id !== exceptSubmissionId && norm(s.name) === n);
+        return (
+          COMPONENTS.some((c) => norm(c.name) === n) ||
+          submissions.some((s) => s.id !== exceptSubmissionId && norm(s.name) === n)
+        );
       },
     };
   }, [submissions]);

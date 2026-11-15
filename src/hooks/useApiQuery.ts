@@ -10,7 +10,8 @@ export interface QueryState<T> {
   reload: () => void;
 }
 
-const toApiError = (e: unknown): ApiError => (e instanceof ApiError ? e : new ApiError(0, 'unknown', e instanceof Error ? e.message : 'Unknown error'));
+const toApiError = (e: unknown): ApiError =>
+  e instanceof ApiError ? e : new ApiError(0, 'unknown', e instanceof Error ? e.message : 'Unknown error');
 
 /**
  * Fetches whenever `key` changes; the previous request is aborted so stale responses never win.
@@ -22,13 +23,20 @@ export function useApiQuery<T>(key: string, fetcher: (signal: AbortSignal) => Pr
   const [result, setResult] = useState<{ key: string; data?: T; error?: ApiError }>({ key: '' });
   const [previous, setPrevious] = useState<T | undefined>(undefined);
   const fetcherRef = useRef(fetcher);
-  useEffect(() => { fetcherRef.current = fetcher; });
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   useEffect(() => {
     const ac = new AbortController();
     fetcherRef.current(ac.signal).then(
-      (data) => { setResult({ key: fullKey, data }); setPrevious(data); },
-      (e: unknown) => { if (!isAbortError(e)) setResult({ key: fullKey, error: toApiError(e) }); },
+      (data) => {
+        setResult({ key: fullKey, data });
+        setPrevious(data);
+      },
+      (e: unknown) => {
+        if (!isAbortError(e)) setResult({ key: fullKey, error: toApiError(e) });
+      },
     );
     return () => ac.abort();
   }, [fullKey]);

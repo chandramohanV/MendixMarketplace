@@ -1,16 +1,30 @@
 // Typed client for the Studio Releases API. Every response is validated with the shared Zod schemas.
 import type { z } from 'zod';
 import {
-  ApiErrorSchema, ReleaseListSchema, StudioReleaseSchema, SummarySchema,
-  type CreateReleaseInput, type FieldError, type ListQuery, type PatchReleaseInput,
-  type ReleaseList, type StudioRelease, type StudioSummary, type UpdateReleaseInput,
+  ApiErrorSchema,
+  ReleaseListSchema,
+  StudioReleaseSchema,
+  SummarySchema,
+  type CreateReleaseInput,
+  type FieldError,
+  type ListQuery,
+  type PatchReleaseInput,
+  type ReleaseList,
+  type StudioRelease,
+  type StudioSummary,
+  type UpdateReleaseInput,
 } from '../../shared/studio';
 
 const BASE = '/api/studio';
 
 /** Any failure talking to the API: HTTP errors carry the server's code/details; network errors use status 0. */
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string, public details: FieldError[] = []) {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public details: FieldError[] = [],
+  ) {
     super(message);
     this.name = 'ApiError';
   }
@@ -18,7 +32,11 @@ export class ApiError extends Error {
 
 export const isAbortError = (e: unknown): boolean => e instanceof DOMException && e.name === 'AbortError';
 
-async function request<S extends z.ZodType>(path: string, schema: S | null, init: RequestInit = {}): Promise<z.output<S>> {
+async function request<S extends z.ZodType>(
+  path: string,
+  schema: S | null,
+  init: RequestInit = {},
+): Promise<z.output<S>> {
   let res: Response;
   try {
     res = await fetch(BASE + path, {
@@ -32,7 +50,8 @@ async function request<S extends z.ZodType>(path: string, schema: S | null, init
   if (!res.ok) {
     const body: unknown = await res.json().catch(() => null);
     const parsed = ApiErrorSchema.safeParse(body);
-    if (parsed.success) throw new ApiError(res.status, parsed.data.error.code, parsed.data.error.message, parsed.data.error.details);
+    if (parsed.success)
+      throw new ApiError(res.status, parsed.data.error.code, parsed.data.error.message, parsed.data.error.details);
     throw new ApiError(res.status, 'http_error', `The Studio API returned ${res.status}.`);
   }
   if (!schema) return undefined as z.output<S>;

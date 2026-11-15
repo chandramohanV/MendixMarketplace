@@ -13,19 +13,32 @@ function TopBar({ onMenu }) {
   };
   return (
     <header className="topbar">
-      <button className="topbar-icon apps" onClick={onMenu} aria-label="Toggle navigation"><Icon name="apps" /></button>
+      <button className="topbar-icon apps" onClick={onMenu} aria-label="Toggle navigation">
+        <Icon name="apps" />
+      </button>
       <Link to="/" className="brand">
         <span className="brand-mark">blox</span>
         <span className="brand-divider" />
         <span className="brand-product">MARKETPLACE</span>
       </Link>
       <form className="topbar-search" onSubmit={submit} role="search">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" aria-label="Search the marketplace" />
-        <button type="submit" aria-label="Search"><Icon name="search" /></button>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search"
+          aria-label="Search the marketplace"
+        />
+        <button type="submit" aria-label="Search">
+          <Icon name="search" />
+        </button>
       </form>
       <div className="topbar-right">
-        <Link to="/guidelines" className="topbar-icon" title="Help"><Icon name="help" /></Link>
-        <Link to="/my" className="topbar-avatar" title="Demo User – My Marketplace">DU</Link>
+        <Link to="/guidelines" className="topbar-icon" title="Help">
+          <Icon name="help" />
+        </Link>
+        <Link to="/my" className="topbar-avatar" title="Demo User – My Marketplace">
+          DU
+        </Link>
       </div>
     </header>
   );
@@ -46,18 +59,33 @@ function Sidebar({ open, collapsed, onCollapse }) {
     <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`} aria-label="Sidebar navigation">
       <nav className="nav-group">
         {item('/components', 'explore', 'Explore', exploreActive)}
-        {item('/my', 'heart', 'My Marketplace', undefined, favorites.length > 0 && <span className="nav-count">{favorites.length}</span>)}
+        {item(
+          '/my',
+          'heart',
+          'My Marketplace',
+          undefined,
+          favorites.length > 0 && <span className="nav-count">{favorites.length}</span>,
+        )}
         {item('/publishers', 'building', 'Publishers')}
         {item('/submit', 'upload', 'Contribute')}
       </nav>
       <div className="nav-sep" />
       <nav className="nav-group">
-        <NavLink to="/studio" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Download Studio">
-          <span className="studio-mark">bx</span><span className="nav-text">Download Studio</span>
+        <NavLink
+          to="/studio"
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          title="Download Studio"
+        >
+          <span className="studio-mark">bx</span>
+          <span className="nav-text">Download Studio</span>
         </NavLink>
         {item('/guidelines', 'book', 'Guidelines')}
       </nav>
-      <button className="nav-item collapse-btn" onClick={onCollapse} title={collapsed ? 'Expand menu' : 'Collapse menu'}>
+      <button
+        className="nav-item collapse-btn"
+        onClick={onCollapse}
+        title={collapsed ? 'Expand menu' : 'Collapse menu'}
+      >
         <Icon name={collapsed ? 'chevronRight' : 'chevronLeft'} />
         <span className="nav-text">Collapse Menu</span>
       </button>
@@ -72,7 +100,9 @@ export function Footer() {
       <Link to="/guidelines">Terms of Use</Link>
       <Link to="/guidelines">Privacy Policy</Link>
       <Link to="/guidelines">Publishing Guidelines</Link>
-      <span className="footer-cookie"><Icon name="cookie" /> Cookie Settings</span>
+      <span className="footer-cookie">
+        <Icon name="cookie" /> Cookie Settings
+      </span>
     </footer>
   );
 }
@@ -98,7 +128,9 @@ export default function Layout() {
         {!isDetail && <Sidebar open={menuOpen} collapsed={collapsed} onCollapse={() => setCollapsed((c) => !c)} />}
         {menuOpen && !isDetail && <div className="backdrop" onClick={() => setMenuOpen(false)} />}
         <div className="main-scroll" onClick={() => menuOpen && setMenuOpen(false)}>
-          <main><Outlet /></main>
+          <main>
+            <Outlet />
+          </main>
           <Footer />
         </div>
       </div>

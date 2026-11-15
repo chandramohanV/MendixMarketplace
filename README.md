@@ -7,16 +7,19 @@ A demo component marketplace (modules, widgets, services, starter apps) built wi
 ## Screenshots
 
 ### Filtered results
+
 Selecting any filter (or searching) switches the explore page to a results view with removable filter chips, a result count, sorting and pagination.
 
 ![Filtered results](docs/screenshots/filtered-results.png)
 
 ### Component detail
+
 Header with support badge, version requirement and actions; tabbed content; publisher, release, requirements, categories and support info in the side column.
 
 ![Component detail](docs/screenshots/component-detail.png)
 
 ### Reviews
+
 Rating summary with distribution bars, a write-a-review form and helpful votes.
 
 ![Reviews tab](docs/screenshots/reviews.png)
@@ -26,6 +29,7 @@ Rating summary with distribution bars, a write-a-review form and helpful votes.
 ![Publishers](docs/screenshots/publishers.png)
 
 ### Studio download page
+
 Recommended LTS download with Windows / Mac buttons, latest-features panels, a release-type legend and a searchable, filterable, sortable release table with paging. Release notes open in a dialog.
 
 ![Studio download page](docs/screenshots/studio.png)
@@ -35,6 +39,7 @@ Recommended LTS download with Windows / Mac buttons, latest-features panels, a r
 ![Release notes dialog](docs/screenshots/studio-release-notes.png)
 
 ### Manage releases
+
 `/studio/manage` creates, edits and deletes releases through the Studio API, with a release-notes editor, inline validation (client-side and server `422` errors mapped onto fields) and delete confirmation.
 
 ![Manage releases](docs/screenshots/studio-manage.png)
@@ -42,6 +47,7 @@ Recommended LTS download with Windows / Mac buttons, latest-features panels, a r
 ![Edit dialog with validation errors](docs/screenshots/studio-release-dialog.png)
 
 ### Contribute a component
+
 A 4-step form with inline, accessible validation (name uniqueness, length limits with a live counter, semantic version, `.mpk`/`.zip` up to 50 MB, `https://` repository), draft autosave and a review step with per-section Edit links.
 
 ![Inline validation](docs/screenshots/submit-errors.png)
@@ -51,11 +57,13 @@ A 4-step form with inline, accessible validation (name uniqueness, length limits
 ![Submission received](docs/screenshots/submit-success.png)
 
 ### My submissions
+
 Track submissions from pending review to published. Pending submissions can be edited, approved instantly (demo) or withdrawn; published ones appear across the marketplace.
 
 ![My submissions](docs/screenshots/my-submissions.png)
 
 ### Mobile
+
 The sidebar collapses behind the menu button and filters open as a slide-in drawer. On the Studio page and in My submissions, table rows stack as cards.
 
 <p>
@@ -72,7 +80,7 @@ The sidebar collapses behind the menu button and filters open as a slide-in draw
 - **Filtering** – compatibility, content type, support level, category, industry and rating; filters switch the page to a results view with removable chips, sorting and pagination (all state lives in the URL)
 - **Component detail** – Overview, Documentation, Releases, Reviews and Developers tabs; version picker, download, favorite, share, write a review
 - **My Marketplace** – favorites, download history, your reviews and **My submissions** (saved in `localStorage`)
-- **Contribute** (`/submit`) – submit a component through a validated 4-step form with draft autosave; submissions go *pending → published* (the demo reviewer approves after ~5 s, or instantly via "Approve now") and then appear in Explore, search, filters, sorting, "What's New" and on their own detail page. Pending submissions are visible only to you and can be edited (`/submit?edit=<id>`) or withdrawn
+- **Contribute** (`/submit`) – submit a component through a validated 4-step form with draft autosave; submissions go _pending → published_ (the demo reviewer approves after ~5 s, or instantly via "Approve now") and then appear in Explore, search, filters, sorting, "What's New" and on their own detail page. Pending submissions are visible only to you and can be edited (`/submit?edit=<id>`) or withdrawn
 - **Studio download page** (`/studio`) – LTS / latest downloads, release types, release table with version search, supported-version filter, date sorting, paging and release-notes dialog; all data comes from the Studio API, with loading skeletons and error states with Retry
 - **Studio Releases API** – a TypeScript REST API (Hono + Zod) with create, read, update and delete, file-backed persistence, and a **Manage releases** page (`/studio/manage`). See [Studio Releases API](#studio-releases-api)
 - **Publishers** directory
@@ -106,16 +114,16 @@ A small REST API for the releases shown on `/studio`, in `server/` (Hono, run by
 
 ### Endpoints (under `/api/studio`)
 
-| Method | Path | Description | Success |
-|---|---|---|---|
-| GET | `/releases` | List. Query: `q` (version contains), `line` (e.g. `11.12`), `type` (`LTS`, `MTS`, `LATEST`, `BETA`, `none`), `sort` (`version` (default, newest first), `date-asc`, `date-desc`), `page` (≥ 1), `pageSize` (1–100, default 10). Returns `{ items, total, page, pageSize }`; items omit `notes` | 200 |
-| GET | `/releases/:version` | One release, including `notes` | 200 |
-| POST | `/releases` | Create. Body: `version`, `date`, optional `type`, `mac`, `notes` | 201 + `Location` |
-| PUT | `/releases/:version` | Full update. Body: `type`, `date`, `notes`, optional `mac`; `version` may be sent but can't change | 200 |
-| PATCH | `/releases/:version` | Partial update of any of `type`, `date`, `mac`, `notes` | 200 |
-| DELETE | `/releases/:version` | Delete | 204 |
-| GET | `/summary` | `{ latest, recommendedLts, supportedLines, types }` for the page hero | 200 |
-| GET | `/health` | `{ ok: true }` | 200 |
+| Method | Path                 | Description                                                                                                                                                                                                                                                                                    | Success          |
+| ------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| GET    | `/releases`          | List. Query: `q` (version contains), `line` (e.g. `11.12`), `type` (`LTS`, `MTS`, `LATEST`, `BETA`, `none`), `sort` (`version` (default, newest first), `date-asc`, `date-desc`), `page` (≥ 1), `pageSize` (1–100, default 10). Returns `{ items, total, page, pageSize }`; items omit `notes` | 200              |
+| GET    | `/releases/:version` | One release, including `notes`                                                                                                                                                                                                                                                                 | 200              |
+| POST   | `/releases`          | Create. Body: `version`, `date`, optional `type`, `mac`, `notes`                                                                                                                                                                                                                               | 201 + `Location` |
+| PUT    | `/releases/:version` | Full update. Body: `type`, `date`, `notes`, optional `mac`; `version` may be sent but can't change                                                                                                                                                                                             | 200              |
+| PATCH  | `/releases/:version` | Partial update of any of `type`, `date`, `mac`, `notes`                                                                                                                                                                                                                                        | 200              |
+| DELETE | `/releases/:version` | Delete                                                                                                                                                                                                                                                                                         | 204              |
+| GET    | `/summary`           | `{ latest, recommendedLts, supportedLines, types }` for the page hero                                                                                                                                                                                                                          | 200              |
+| GET    | `/health`            | `{ ok: true }`                                                                                                                                                                                                                                                                                 | 200              |
 
 A release looks like `{ version, major, minor, patch, line, type, date, mac, notes }`. `major`, `minor`, `patch` and `line` are always derived from `version`; sending them is rejected.
 
@@ -135,16 +143,22 @@ A release looks like `{ version, major, minor, patch, line, type, date, mac, not
 Every error uses one shape:
 
 ```json
-{ "error": { "code": "validation_failed", "message": "The request body is invalid.", "details": [{ "field": "notes.Fixes.1", "message": "Note items cannot be empty." }] } }
+{
+  "error": {
+    "code": "validation_failed",
+    "message": "The request body is invalid.",
+    "details": [{ "field": "notes.Fixes.1", "message": "Note items cannot be empty." }]
+  }
+}
 ```
 
-| Status | Codes |
-|---|---|
-| 400 | `bad_json` (malformed body), `bad_query` (invalid or unknown query parameters) |
-| 404 | `not_found` (unknown release or route) |
-| 409 | `conflict` (duplicate version), `latest_required`, `latest_protected` |
-| 422 | `validation_failed`; `details` lists each field (dotted path) and its message |
-| 500 | `internal`; no stack traces are returned |
+| Status | Codes                                                                          |
+| ------ | ------------------------------------------------------------------------------ |
+| 400    | `bad_json` (malformed body), `bad_query` (invalid or unknown query parameters) |
+| 404    | `not_found` (unknown release or route)                                         |
+| 409    | `conflict` (duplicate version), `latest_required`, `latest_protected`          |
+| 422    | `validation_failed`; `details` lists each field (dotted path) and its message  |
+| 500    | `internal`; no stack traces are returned                                       |
 
 ### Examples
 
@@ -165,6 +179,7 @@ curl -X DELETE "$API/releases/11.17.1"
 `npm run test:api` starts the API on a random port with a temporary data directory and covers every endpoint, filter, sort and pagination edge, every rule and error code, LATEST demotion and delete protection, persistence across a restart, and concurrent writes (20 parallel creates, conflicting creates).
 
 `npm run test:e2e` starts the Studio API (temporary data) and a Vite dev server, then drives a locally installed Edge or Chrome (headless, via `puppeteer-core`) through four suites:
+
 - marketplace;
 - Studio page (expected values are read from the API);
 - the contribute flow (every validation rule, drafts, review/edit, double-submit protection, pending → published, edit, withdraw);

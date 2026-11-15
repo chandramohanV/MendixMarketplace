@@ -2,8 +2,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
-  compareVersionsDesc, defaultMac, macRuleError, parseVersion, RELEASE_TYPE_INFO,
-  type FieldError, type ReleaseListItem, type ReleaseType, type StudioRelease, type StudioSummary,
+  compareVersionsDesc,
+  defaultMac,
+  macRuleError,
+  parseVersion,
+  RELEASE_TYPE_INFO,
+  type FieldError,
+  type ReleaseListItem,
+  type ReleaseType,
+  type StudioRelease,
+  type StudioSummary,
 } from '../shared/studio';
 import type { z } from 'zod';
 import type { CreateReleaseSchema, ListQuerySchema, PatchReleaseSchema, UpdateReleaseSchema } from '../shared/studio';
@@ -16,7 +24,12 @@ type ListParams = z.output<typeof ListQuerySchema>;
 
 /** A rule violation that maps directly to an HTTP error response. */
 export class HttpError extends Error {
-  constructor(public status: 400 | 404 | 409 | 422, public code: string, message: string, public details?: FieldError[]) {
+  constructor(
+    public status: 400 | 404 | 409 | 422,
+    public code: string,
+    message: string,
+    public details?: FieldError[],
+  ) {
     super(message);
   }
 }
@@ -55,12 +68,19 @@ export class ReleaseStore {
     if (q.line) rows = rows.filter((r) => r.line === q.line);
     if (q.type) rows = rows.filter((r) => (q.type === 'none' ? r.type === null : r.type === q.type));
     const sorted = [...rows].sort(
-      q.sort === 'date-asc' ? (a, b) => a.date.localeCompare(b.date) || -compareVersionsDesc(a, b)
-        : q.sort === 'date-desc' ? (a, b) => b.date.localeCompare(a.date) || compareVersionsDesc(a, b)
+      q.sort === 'date-asc'
+        ? (a, b) => a.date.localeCompare(b.date) || -compareVersionsDesc(a, b)
+        : q.sort === 'date-desc'
+          ? (a, b) => b.date.localeCompare(a.date) || compareVersionsDesc(a, b)
           : compareVersionsDesc,
     );
     const start = (q.page - 1) * q.pageSize;
-    return { items: sorted.slice(start, start + q.pageSize).map(withoutNotes), total: sorted.length, page: q.page, pageSize: q.pageSize };
+    return {
+      items: sorted.slice(start, start + q.pageSize).map(withoutNotes),
+      total: sorted.length,
+      page: q.page,
+      pageSize: q.pageSize,
+    };
   }
 
   get(version: string): StudioRelease {
@@ -74,7 +94,8 @@ export class ReleaseStore {
     const latest = byVersion.find((r) => r.type === 'LATEST');
     const lts = byVersion.find((r) => r.type === 'LTS');
     const lines = new Map<string, 'LTS' | 'MTS'>();
-    for (const r of byVersion) if ((r.type === 'LTS' || r.type === 'MTS') && !lines.has(r.line)) lines.set(r.line, r.type);
+    for (const r of byVersion)
+      if ((r.type === 'LTS' || r.type === 'MTS') && !lines.has(r.line)) lines.set(r.line, r.type);
     return {
       latest: latest ? withoutNotes(latest) : null,
       recommendedLts: lts ? withoutNotes(lts) : null,
@@ -87,10 +108,17 @@ export class ReleaseStore {
   create(body: CreateBody): Promise<StudioRelease> {
     return this.mutate((draft) => {
       const version = body.version.trim();
-      if (draft.some((r) => r.version === version)) throw new HttpError(409, 'conflict', `Release ${version} already exists.`, [{ field: 'version', message: `Release ${version} already exists.` }]);
+      if (draft.some((r) => r.version === version))
+        throw new HttpError(409, 'conflict', `Release ${version} already exists.`, [
+          { field: 'version', message: `Release ${version} already exists.` },
+        ]);
       const release: StudioRelease = {
-        version, ...parseVersion(version), type: null, date: body.date,
-        mac: this.resolveMac(version, body.mac), notes: normalizeNotes(body.notes),
+        version,
+        ...parseVersion(version),
+        type: null,
+        date: body.date,
+        mac: this.resolveMac(version, body.mac),
+        notes: normalizeNotes(body.notes),
       };
       draft.push(release);
       this.applyType(draft, release, body.type);
@@ -100,7 +128,12 @@ export class ReleaseStore {
 
   update(version: string, body: UpdateBody): Promise<StudioRelease> {
     if (body.version !== undefined && body.version.trim() !== version) {
-      throw new HttpError(422, 'validation_failed', 'The version cannot be changed.', [{ field: 'version', message: 'The version cannot be changed; delete the release and create a new one instead.' }]);
+      throw new HttpError(422, 'validation_failed', 'The version cannot be changed.', [
+        {
+          field: 'version',
+          message: 'The version cannot be changed; delete the release and create a new one instead.',
+        },
+      ]);
     }
     return this.mutate((draft) => {
       const release = draft.find((r) => r.version === version);
@@ -130,7 +163,11 @@ export class ReleaseStore {
       const i = draft.findIndex((r) => r.version === version);
       if (i === -1) throw notFound(version);
       if (draft[i].type === 'LATEST') {
-        throw new HttpError(409, 'latest_protected', `Release ${version} is the current LATEST release. Promote another release to LATEST before deleting it.`);
+        throw new HttpError(
+          409,
+          'latest_protected',
+          `Release ${version} is the current LATEST release. Promote another release to LATEST before deleting it.`,
+        );
       }
       draft.splice(i, 1);
     });
@@ -148,11 +185,27 @@ export class ReleaseStore {
     if (type === release.type) return;
     if (type === 'LATEST') {
       if (release.type === 'BETA') {
-        throw new HttpError(422, 'validation_failed', 'A beta release cannot be LATEST.', [{ field: 'type', message: 'A beta release cannot be LATEST. Change it to a GA type (none, LTS or MTS) first.' }]);
+        throw new HttpError(422, 'validation_failed', 'A beta release cannot be LATEST.', [
+          {
+            field: 'type',
+            message: 'A beta release cannot be LATEST. Change it to a GA type (none, LTS or MTS) first.',
+          },
+        ]);
       }
-      for (const other of draft) if (other !== release && other.type === 'LATEST') other.type = demotedType(draft, other);
+      for (const other of draft)
+        if (other !== release && other.type === 'LATEST') other.type = demotedType(draft, other);
     } else if (release.type === 'LATEST') {
-      throw new HttpError(409, 'latest_required', 'There must always be one LATEST release. Promote another release to LATEST instead.', [{ field: 'type', message: 'There must always be one LATEST release. Promote another release to LATEST instead.' }]);
+      throw new HttpError(
+        409,
+        'latest_required',
+        'There must always be one LATEST release. Promote another release to LATEST instead.',
+        [
+          {
+            field: 'type',
+            message: 'There must always be one LATEST release. Promote another release to LATEST instead.',
+          },
+        ],
+      );
     }
     release.type = type;
   }
@@ -176,9 +229,15 @@ export class ReleaseStore {
     await fs.writeFile(tmp, JSON.stringify(data, null, 1));
     // rename() replaces the target atomically; retry briefly if Windows has the file locked.
     for (let attempt = 0; ; attempt++) {
-      try { await fs.rename(tmp, this.file); return; } catch (e) {
+      try {
+        await fs.rename(tmp, this.file);
+        return;
+      } catch (e) {
         const code = (e as NodeJS.ErrnoException).code;
-        if (attempt >= 5 || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) { await fs.rm(tmp, { force: true }); throw e; }
+        if (attempt >= 5 || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) {
+          await fs.rm(tmp, { force: true });
+          throw e;
+        }
         await sleep(20 * (attempt + 1));
       }
     }

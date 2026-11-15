@@ -14,7 +14,12 @@ export function Stars({ value, size = 14, count }: { value: number; size?: numbe
         const id = `g${i}-${Math.round(fill * 10)}`;
         return (
           <svg key={i} width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-            <defs><linearGradient id={id}><stop offset={fill} stopColor="var(--star)" /><stop offset={fill} stopColor="transparent" /></linearGradient></defs>
+            <defs>
+              <linearGradient id={id}>
+                <stop offset={fill} stopColor="var(--star)" />
+                <stop offset={fill} stopColor="transparent" />
+              </linearGradient>
+            </defs>
             <path d={STAR} fill={`url(#${id})`} stroke="var(--star)" strokeWidth="1.1" strokeLinejoin="round" />
           </svg>
         );
@@ -44,13 +49,25 @@ export function SupportBadge({ support, long = false }: { support: SupportLevel;
   );
 }
 
-const STATUS_LABEL: Record<SubmissionStatus, string> = { pending: 'Pending review', published: 'Published', rejected: 'Rejected' };
+const STATUS_LABEL: Record<SubmissionStatus, string> = {
+  pending: 'Pending review',
+  published: 'Published',
+  rejected: 'Rejected',
+};
 
 export function StatusBadge({ status }: { status: SubmissionStatus }) {
   return <span className={`badge badge-status-${status}`}>{STATUS_LABEL[status]}</span>;
 }
 
-export function FavoriteButton({ c, className = '', withLabel = false }: { c: Pick<Component, 'id' | 'name'>; className?: string; withLabel?: boolean }) {
+export function FavoriteButton({
+  c,
+  className = '',
+  withLabel = false,
+}: {
+  c: Pick<Component, 'id' | 'name'>;
+  className?: string;
+  withLabel?: boolean;
+}) {
   const { favorites, toggleFavorite } = useStore();
   const on = favorites.includes(c.id);
   return (
@@ -58,9 +75,20 @@ export function FavoriteButton({ c, className = '', withLabel = false }: { c: Pi
       className={`fav-btn ${on ? 'on' : ''} ${className}`}
       aria-pressed={on}
       title={on ? 'Remove from favorites' : 'Add to favorites'}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(c.id, c.name); }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFavorite(c.id, c.name);
+      }}
     >
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13.5s-5.5-3.2-5.5-7A2.9 2.9 0 0 1 8 4.8a2.9 2.9 0 0 1 5.5 1.7c0 3.8-5.5 7-5.5 7z" fill={on ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.3" /></svg>
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          d="M8 13.5s-5.5-3.2-5.5-7A2.9 2.9 0 0 1 8 4.8a2.9 2.9 0 0 1 5.5 1.7c0 3.8-5.5 7-5.5 7z"
+          fill={on ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="1.3"
+        />
+      </svg>
       {withLabel && <span>{on ? 'Favorited' : 'Favorite'}</span>}
     </button>
   );
@@ -82,13 +110,25 @@ export function ComponentCard({ c }: { c: Component }) {
       </div>
       <div className="card-foot">
         {c.ratingCount > 0 ? <Stars value={c.rating} count={c.ratingCount} /> : <span />}
-        {c.status && c.status !== 'published' ? <StatusBadge status={c.status} /> : <SupportBadge support={c.support} />}
+        {c.status && c.status !== 'published' ? (
+          <StatusBadge status={c.status} />
+        ) : (
+          <SupportBadge support={c.support} />
+        )}
       </div>
     </Link>
   );
 }
 
-export function Pagination({ page, pages, onChange }: { page: number; pages: number; onChange: (page: number) => void }) {
+export function Pagination({
+  page,
+  pages,
+  onChange,
+}: {
+  page: number;
+  pages: number;
+  onChange: (page: number) => void;
+}) {
   if (pages <= 1) return null;
   const nums: (number | '…')[] = [];
   for (let i = 1; i <= pages; i++) {
@@ -97,13 +137,28 @@ export function Pagination({ page, pages, onChange }: { page: number; pages: num
   }
   return (
     <nav className="pagination" aria-label="Pagination">
-      <button disabled={page === 1} onClick={() => onChange(page - 1)} aria-label="Previous page"><Icon name="chevronLeft" /></button>
+      <button disabled={page === 1} onClick={() => onChange(page - 1)} aria-label="Previous page">
+        <Icon name="chevronLeft" />
+      </button>
       {nums.map((n, i) =>
-        n === '…' ? <span key={`e${i}`} className="ellipsis">…</span> : (
-          <button key={n} className={n === page ? 'active' : ''} onClick={() => onChange(n)} aria-current={n === page ? 'page' : undefined}>{n}</button>
+        n === '…' ? (
+          <span key={`e${i}`} className="ellipsis">
+            …
+          </span>
+        ) : (
+          <button
+            key={n}
+            className={n === page ? 'active' : ''}
+            onClick={() => onChange(n)}
+            aria-current={n === page ? 'page' : undefined}
+          >
+            {n}
+          </button>
         ),
       )}
-      <button disabled={page === pages} onClick={() => onChange(page + 1)} aria-label="Next page"><Icon name="chevronRight" /></button>
+      <button disabled={page === pages} onClick={() => onChange(page + 1)} aria-label="Next page">
+        <Icon name="chevronRight" />
+      </button>
     </nav>
   );
 }

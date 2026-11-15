@@ -14,11 +14,23 @@ export function Guidelines() {
       </ul>
       <h2>Support levels</h2>
       <dl className="facts">
-        {Object.entries(SUPPORT_INFO).map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd>{v}</dd></Fragment>)}
+        {Object.entries(SUPPORT_INFO).map(([k, v]) => (
+          <Fragment key={k}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </Fragment>
+        ))}
       </dl>
       <h2>Security</h2>
-      <p>Do not include credentials, and keep third-party libraries up to date. Components with known vulnerabilities may be unlisted.</p>
-      <p><Link to="/submit" className="btn btn-primary">Start a submission</Link></p>
+      <p>
+        Do not include credentials, and keep third-party libraries up to date. Components with known vulnerabilities may
+        be unlisted.
+      </p>
+      <p>
+        <Link to="/submit" className="btn btn-primary">
+          Start a submission
+        </Link>
+      </p>
     </div>
   );
 }
@@ -29,7 +41,9 @@ export function NotFound() {
       <div className="empty-icon">🧩</div>
       <h1>Page not found</h1>
       <p className="muted">The page or component you're looking for doesn't exist.</p>
-      <Link to="/components" className="btn btn-primary">Browse components</Link>
+      <Link to="/components" className="btn btn-primary">
+        Browse components
+      </Link>
     </div>
   );
 }

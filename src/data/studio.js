@@ -9,11 +9,22 @@ export const RELEASE_TYPES = {
 
 // Support lines: [major, minor, type, patch count]
 const LINES = [
-  [11, 12, 'LTS', 8], [11, 6, 'MTS', 5],
-  [10, 24, 'LTS', 16], [10, 18, 'MTS', 7], [10, 12, 'MTS', 10], [10, 6, 'MTS', 9],
-  [9, 24, 'LTS', 41], [9, 18, 'MTS', 6], [9, 12, 'MTS', 5], [9, 6, 'MTS', 11],
+  [11, 12, 'LTS', 8],
+  [11, 6, 'MTS', 5],
+  [10, 24, 'LTS', 16],
+  [10, 18, 'MTS', 7],
+  [10, 12, 'MTS', 10],
+  [10, 6, 'MTS', 9],
+  [9, 24, 'LTS', 41],
+  [9, 18, 'MTS', 6],
+  [9, 12, 'MTS', 5],
+  [9, 6, 'MTS', 11],
 ];
-const MAJORS = { 9: { minors: 24, start: '2021-06-01' }, 10: { minors: 24, start: '2023-06-01' }, 11: { minors: 16, start: '2025-06-03' } };
+const MAJORS = {
+  9: { minors: 24, start: '2021-06-01' },
+  10: { minors: 24, start: '2023-06-01' },
+  11: { minors: 16, start: '2025-06-03' },
+};
 const TODAY = new Date('2026-11-14T00:00:00Z');
 
 function addDays(iso, days) {
@@ -46,12 +57,25 @@ const NOTE_POOL = {
   ],
 };
 
-function hash(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function hash(s) {
+  let h = 2166136261;
+  for (const ch of s) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
 function notesFor(version, patch) {
   const h = hash(version);
-  const take = (arr, n, off) => Array.from({ length: n }, (_, i) => arr[(h + off + i * 7) % arr.length]).filter((v, i, a) => a.indexOf(v) === i);
-  if (patch > 0) return { Fixes: take(NOTE_POOL.Fixes, 2 + (h % 2), 0), Improvements: take(NOTE_POOL.Improvements, 1, 3) };
-  return { 'New Features': take(NOTE_POOL['New Features'], 2 + (h % 2), 1), Improvements: take(NOTE_POOL.Improvements, 2, 5), Fixes: take(NOTE_POOL.Fixes, 2, 2) };
+  const take = (arr, n, off) =>
+    Array.from({ length: n }, (_, i) => arr[(h + off + i * 7) % arr.length]).filter((v, i, a) => a.indexOf(v) === i);
+  if (patch > 0)
+    return { Fixes: take(NOTE_POOL.Fixes, 2 + (h % 2), 0), Improvements: take(NOTE_POOL.Improvements, 1, 3) };
+  return {
+    'New Features': take(NOTE_POOL['New Features'], 2 + (h % 2), 1),
+    Improvements: take(NOTE_POOL.Improvements, 2, 5),
+    Fixes: take(NOTE_POOL.Fixes, 2, 2),
+  };
 }
 
 function build() {
@@ -59,7 +83,12 @@ function build() {
   const add = (major, minor, patch, date, type) => {
     const version = `${major}.${minor}.${patch}`;
     map.set(version, {
-      version, major, minor, patch, type, date,
+      version,
+      major,
+      minor,
+      patch,
+      type,
+      date,
       line: `${major}.${minor}`,
       mac: major >= 10,
       notes: notesFor(version, patch),
@@ -75,11 +104,28 @@ function build() {
     for (let p = 1; p < count; p++) add(major, minor, p, addDays(base.date, p * gap + ((p * 7) % 9)), type);
   }
   const list = [...map.values()].filter((r) => r.date <= TODAY.toISOString().slice(0, 10));
-  list.push({ version: '11.17.0', major: 11, minor: 17, patch: 0, type: 'BETA', date: '2026-11-12', line: '11.17', mac: true, notes: notesFor('11.17.0', 0) });
+  list.push({
+    version: '11.17.0',
+    major: 11,
+    minor: 17,
+    patch: 0,
+    type: 'BETA',
+    date: '2026-11-12',
+    line: '11.17',
+    mac: true,
+    notes: notesFor('11.17.0', 0),
+  });
   list.sort(compareVersionsDesc);
   const latest = list.find((r) => r.type !== 'BETA' && r.minor === 16 && r.major === 11);
   // Latest GA gets a patch so it reads like a real release train.
-  const patchRelease = { ...latest, version: '11.16.1', patch: 1, date: '2026-11-03', type: 'LATEST', notes: notesFor('11.16.1', 1) };
+  const patchRelease = {
+    ...latest,
+    version: '11.16.1',
+    patch: 1,
+    date: '2026-11-03',
+    type: 'LATEST',
+    notes: notesFor('11.16.1', 1),
+  };
   list.splice(list.indexOf(latest), 0, patchRelease);
   return list;
 }
@@ -91,6 +137,18 @@ export function compareVersionsDesc(a, b) {
 export const RELEASES = build();
 export const LATEST = RELEASES.find((r) => r.type === 'LATEST');
 export const RECOMMENDED_LTS = RELEASES.filter((r) => r.type === 'LTS').sort(compareVersionsDesc)[0];
-export const SUPPORTED_LINES = LINES.map(([ma, mi, type]) => ({ value: `${ma}.${mi}`, label: `${ma}.${mi} (${type})` }));
-export const monthYear = (iso) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(' ', ', ');
-export const longDate = (iso) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric', timeZone: 'UTC' });
+export const SUPPORTED_LINES = LINES.map(([ma, mi, type]) => ({
+  value: `${ma}.${mi}`,
+  label: `${ma}.${mi} (${type})`,
+}));
+export const monthYear = (iso) =>
+  new Date(iso + 'T00:00:00Z')
+    .toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+    .replace(' ', ', ');
+export const longDate = (iso) =>
+  new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {
+    month: 'long',
+    day: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });

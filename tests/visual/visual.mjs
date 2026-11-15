@@ -22,16 +22,40 @@ const MAX_DIFF_RATIO = 0.001; // 0.1% of pixels
 
 const SUBMISSIONS = [
   {
-    id: 1000002, slug: '1000002-visual-pending-widget', name: 'Visual Pending Widget', type: 'Widget', category: 'User Interface',
-    short: 'A pending submission used by the visual regression baseline.', version: '1.0.0', minPlatform: '11.0',
-    file: { name: 'pending.mpk', size: 2048 }, license: 'MIT', repo: '', description: '', status: 'pending',
-    submittedAt: '2026-11-10T10:00:00.000Z', updatedAt: '2026-11-10T10:00:00.000Z', publishAt: '2099-01-01T00:00:00.000Z',
+    id: 1000002,
+    slug: '1000002-visual-pending-widget',
+    name: 'Visual Pending Widget',
+    type: 'Widget',
+    category: 'User Interface',
+    short: 'A pending submission used by the visual regression baseline.',
+    version: '1.0.0',
+    minPlatform: '11.0',
+    file: { name: 'pending.mpk', size: 2048 },
+    license: 'MIT',
+    repo: '',
+    description: '',
+    status: 'pending',
+    submittedAt: '2026-11-10T10:00:00.000Z',
+    updatedAt: '2026-11-10T10:00:00.000Z',
+    publishAt: '2099-01-01T00:00:00.000Z',
   },
   {
-    id: 1000001, slug: '1000001-visual-published-service', name: 'Visual Published Service', type: 'Service', category: 'Connectors',
-    short: 'A published submission used by the visual regression baseline.', version: '2.1.0', minPlatform: '10.24',
-    file: { name: 'published.zip', size: 4096 }, license: 'Apache V2', repo: '', description: '', status: 'published',
-    submittedAt: '2026-11-01T10:00:00.000Z', updatedAt: '2026-11-01T10:00:00.000Z', publishAt: null,
+    id: 1000001,
+    slug: '1000001-visual-published-service',
+    name: 'Visual Published Service',
+    type: 'Service',
+    category: 'Connectors',
+    short: 'A published submission used by the visual regression baseline.',
+    version: '2.1.0',
+    minPlatform: '10.24',
+    file: { name: 'published.zip', size: 4096 },
+    license: 'Apache V2',
+    repo: '',
+    description: '',
+    status: 'published',
+    submittedAt: '2026-11-01T10:00:00.000Z',
+    updatedAt: '2026-11-01T10:00:00.000Z',
+    publishAt: null,
   },
 ];
 
@@ -39,20 +63,36 @@ const SCREENS = [
   { name: 'explore', path: '/components', ready: '.section .card' },
   { name: 'explore-filtered', path: '/components?type=Widget&sort=az', ready: '.results-head' },
   { name: 'component-detail', path: '/components/6-community-commons', ready: '.detail-head' },
-  { name: 'submit-errors', path: '/submit', ready: 'form.form', action: (p) => p.click('form.form button[type=submit]') },
-  { name: 'my-submissions', path: '/my?tab=submissions', ready: '.submissions-table', storage: { 'mp.submissions': JSON.stringify(SUBMISSIONS) } },
+  {
+    name: 'submit-errors',
+    path: '/submit',
+    ready: 'form.form',
+    action: (p) => p.click('form.form button[type=submit]'),
+  },
+  {
+    name: 'my-submissions',
+    path: '/my?tab=submissions',
+    ready: '.submissions-table',
+    storage: { 'mp.submissions': JSON.stringify(SUBMISSIONS) },
+  },
   { name: 'studio', path: '/studio', ready: '.release-table .version-link' },
   { name: 'studio-manage', path: '/studio/manage', ready: '.manage-table .version-text' },
   {
-    name: 'release-dialog', path: '/studio/manage', ready: '.manage-table .version-text',
-    action: async (p) => { await p.click('button[aria-label="Edit 11.16.0"]'); await p.waitForSelector('#rf-section-0-item-0'); },
+    name: 'release-dialog',
+    path: '/studio/manage',
+    ready: '.manage-table .version-text',
+    action: async (p) => {
+      await p.click('button[aria-label="Edit 11.16.0"]');
+      await p.waitForSelector('#rf-section-0-item-0');
+    },
   },
 ];
 const VIEWPORTS = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'mobile', width: 390, height: 844 },
 ];
-const FREEZE_CSS = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
+const FREEZE_CSS =
+  '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
 
 const env = await startEnv();
 const outDir = path.join(DIR, mode === 'baseline' ? 'baseline' : 'current');
@@ -67,7 +107,9 @@ try {
       const page = await ctx.newPage();
       await page.setViewport({ width: vp.width, height: vp.height });
       if (screen.storage) {
-        await page.evaluateOnNewDocument((entries) => { for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v); }, screen.storage);
+        await page.evaluateOnNewDocument((entries) => {
+          for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
+        }, screen.storage);
       }
       await page.goto(env.base + screen.path, { waitUntil: 'networkidle0' });
       await page.addStyleTag({ content: FREEZE_CSS });
@@ -80,15 +122,26 @@ try {
 
       if (mode === 'compare') {
         const basePath = path.join(DIR, 'baseline', file);
-        if (!fs.existsSync(basePath)) { console.log(`  MISSING baseline ${file}`); failed++; continue; }
+        if (!fs.existsSync(basePath)) {
+          console.log(`  MISSING baseline ${file}`);
+          failed++;
+          continue;
+        }
         const a = PNG.sync.read(fs.readFileSync(basePath));
         const b = PNG.sync.read(fs.readFileSync(path.join(outDir, file)));
-        if (a.width !== b.width || a.height !== b.height) { console.log(`  FAIL  ${file}: size changed`); failed++; continue; }
+        if (a.width !== b.width || a.height !== b.height) {
+          console.log(`  FAIL  ${file}: size changed`);
+          failed++;
+          continue;
+        }
         const diff = new PNG({ width: a.width, height: a.height });
         const pixels = pixelmatch(a.data, b.data, diff.data, a.width, a.height, { threshold: 0.1 });
         const ratio = pixels / (a.width * a.height);
         const ok = ratio <= MAX_DIFF_RATIO;
-        if (!ok) { failed++; fs.writeFileSync(path.join(DIR, 'diff', file), PNG.sync.write(diff)); }
+        if (!ok) {
+          failed++;
+          fs.writeFileSync(path.join(DIR, 'diff', file), PNG.sync.write(diff));
+        }
         console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${file}: ${pixels} px differ (${(ratio * 100).toFixed(3)}%)`);
       } else {
         console.log(`  saved ${file}`);

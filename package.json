@@ -15,7 +15,9 @@
     "test:e2e": "tsx tests/e2e/run.mjs",
     "preview": "vite preview",
     "visual:baseline": "tsx tests/visual/visual.mjs baseline",
-    "visual:compare": "tsx tests/visual/visual.mjs compare"
+    "visual:compare": "tsx tests/visual/visual.mjs compare",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@hono/node-server": "^2.1.8",
