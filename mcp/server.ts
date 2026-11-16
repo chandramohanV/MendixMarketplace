@@ -1,11 +1,9 @@
-// MCP server for Claude Desktop: exposes the marketplace catalog and the Studio Releases API over stdio.
-// stdout carries the MCP protocol, so log only with console.error.
+// MCP server: exposes the marketplace catalog and the Studio Releases API as tools and resources.
+import type { ServerOptions } from '@modelcontextprotocol/sdk/server/index.js';
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { pathToFileURL } from 'node:url';
 import { COMPONENTS } from '../src/data/components';
 import { compareInput, componentRef, publishersInput, reviewsInput, searchInput, studioReleasesInput } from './schemas';
-import { getStudioReleases, getStudioSummary } from './studio';
+import type { StudioClient } from './studio';
 import {
   compareComponents,
   getComponent,
@@ -113,7 +111,7 @@ function registerCatalogTools(server: McpServer): void {
   );
 }
 
-function registerStudioTools(server: McpServer): void {
+function registerStudioTools(server: McpServer, studio: StudioClient): void {
   server.registerTool(
     'get_studio_summary',
     {
@@ -123,7 +121,7 @@ function registerStudioTools(server: McpServer): void {
       inputSchema: {},
       annotations: EXTERNAL,
     },
-    async () => respond(await getStudioSummary()),
+    async () => respond(await studio.summary()),
   );
 
   server.registerTool(
@@ -135,7 +133,7 @@ function registerStudioTools(server: McpServer): void {
       inputSchema: studioReleasesInput,
       annotations: EXTERNAL,
     },
-    async (input) => respond(await getStudioReleases(input)),
+    async (input) => respond(await studio.releases(input)),
   );
 }
 
@@ -161,17 +159,11 @@ function registerResources(server: McpServer): void {
   );
 }
 
-export function createServer(): McpServer {
-  const server = new McpServer({ name: 'component-marketplace', version: '1.0.0' });
+/** Builds the MCP server. Transport-agnostic: see stdio.ts (Claude Desktop) and http.ts (Cloudflare Worker). */
+export function createServer(studio: StudioClient, options?: ServerOptions): McpServer {
+  const server = new McpServer({ name: 'component-marketplace', version: '1.0.0' }, options);
   registerCatalogTools(server);
-  registerStudioTools(server);
+  registerStudioTools(server, studio);
   registerResources(server);
   return server;
-}
-
-// Start on stdio only when run directly; tests import createServer without starting it.
-const isEntryPoint = import.meta.url === pathToFileURL(process.argv[1] ?? '').href;
-if (isEntryPoint) {
-  await createServer().connect(new StdioServerTransport());
-  console.error(`[mcp] component-marketplace server running on stdio (${COMPONENTS.length} components)`);
 }

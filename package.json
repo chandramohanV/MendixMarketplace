@@ -22,10 +22,11 @@
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run build && npm run test:api && npm run test:mcp && npm run test:e2e",
     "deploy": "npm run build && wrangler deploy",
     "cf:dev": "npm run build && wrangler dev",
-    "mcp": "tsx mcp/server.ts",
-    "mcp:inspect": "npx @modelcontextprotocol/inspector tsx mcp/server.ts"
+    "mcp": "tsx mcp/stdio.ts",
+    "mcp:inspect": "npx @modelcontextprotocol/inspector tsx mcp/stdio.ts"
   },
   "dependencies": {
+    "@cfworker/json-schema": "^4.1.6",
     "@hono/node-server": "^2.1.8",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "hono": "^4.13.18",

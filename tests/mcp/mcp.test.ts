@@ -1,9 +1,18 @@
-// MCP server tests: the pure tool handlers, plus an in-memory client <-> server round trip.
+// MCP server tests: the pure tool handlers, the Studio client, an in-memory client <-> server round trip,
+// and the remote /mcp endpoint over real HTTP.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
+import { MCP_PATH } from '../../mcp/http';
+import { ok } from '../../mcp/result';
 import { createServer } from '../../mcp/server';
+import { createStudioClient, type StudioClient } from '../../mcp/studio';
+import { startServer, type RunningServer } from '../../server/server';
 import {
   compareComponents,
   findComponent,
@@ -118,12 +127,49 @@ describe('publishers and compare', () => {
   });
 });
 
+const textOf = (result: Awaited<ReturnType<Client['callTool']>>): string =>
+  (result.content as { type: string; text: string }[])[0].text;
+
+describe('Studio client', () => {
+  test('builds paths and query strings, skipping empty values', async () => {
+    const paths: string[] = [];
+    const studio = createStudioClient(async (p) => {
+      paths.push(p);
+      return Response.json({ ok: true });
+    });
+    await studio.summary();
+    await studio.releases({ line: '11.0', q: '', pageSize: 2 });
+    await studio.releases({ version: '11.2.0' });
+    assert.deepEqual(paths, ['/summary', '/releases?line=11.0&pageSize=2', '/releases/11.2.0']);
+  });
+
+  test('turns API errors and network failures into messages', async () => {
+    const apiError = createStudioClient(async () =>
+      Response.json({ error: { code: 'not_found', message: 'nope' } }, { status: 404 }),
+    );
+    const result = await apiError.releases({ version: '1.0.0' });
+    assert.equal(result.ok, false);
+    assert.match(result.ok ? '' : result.error, /not_found/);
+
+    const down = createStudioClient(async () => {
+      throw new Error('ECONNREFUSED');
+    }, 'Test API');
+    const failure = await down.summary();
+    assert.match(failure.ok ? '' : failure.error, /Test API is unreachable \(ECONNREFUSED\)/);
+  });
+});
+
+const FAKE_STUDIO: StudioClient = {
+  summary: async () => ok({ latest: { version: '9.9.9' } }),
+  releases: async () => ok({ items: [] }),
+};
+
 describe('MCP server over an in-memory transport', () => {
   const client = new Client({ name: 'test-client', version: '1.0.0' });
 
   before(async () => {
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-    await createServer().connect(serverTransport);
+    await createServer(FAKE_STUDIO).connect(serverTransport);
     await client.connect(clientTransport);
   });
   after(() => client.close());
@@ -145,8 +191,12 @@ describe('MCP server over an in-memory transport', () => {
 
   test('calls a tool and returns JSON text', async () => {
     const result = await client.callTool({ name: 'get_component', arguments: { component: FIRST.slug } });
-    const [content] = result.content as { type: string; text: string }[];
-    assert.equal(JSON.parse(content.text).slug, FIRST.slug);
+    assert.equal(JSON.parse(textOf(result)).slug, FIRST.slug);
+  });
+
+  test('Studio tools use the injected client', async () => {
+    const result = await client.callTool({ name: 'get_studio_summary', arguments: {} });
+    assert.equal(JSON.parse(textOf(result)).latest.version, '9.9.9');
   });
 
   test('flags lookup failures with isError', async () => {
@@ -159,5 +209,35 @@ describe('MCP server over an in-memory transport', () => {
     const [content] = contents;
     assert.ok('text' in content);
     assert.equal(JSON.parse(content.text).name, FIRST.name);
+  });
+});
+
+describe('remote MCP endpoint over HTTP', () => {
+  let server: RunningServer;
+  let dataDir: string;
+  const client = new Client({ name: 'http-test-client', version: '1.0.0' });
+
+  before(async () => {
+    dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-http-'));
+    server = await startServer({ port: 0, dataDir });
+    await client.connect(new StreamableHTTPClientTransport(new URL(server.url + MCP_PATH)));
+  });
+  after(async () => {
+    await client.close();
+    await server.close();
+    await fs.rm(dataDir, { recursive: true, force: true });
+  });
+
+  test('serves catalog tools', async () => {
+    const result = await client.callTool({ name: 'search_components', arguments: { query: 'pdf', limit: 1 } });
+    assert.equal(JSON.parse(textOf(result)).results[0].name, 'PDF Generator');
+  });
+
+  test('Studio tools read the same server in-process', async () => {
+    const [summary, direct] = await Promise.all([
+      client.callTool({ name: 'get_studio_summary', arguments: {} }),
+      fetch(`${server.url}/api/studio/summary`).then((r) => r.json()),
+    ]);
+    assert.deepEqual(JSON.parse(textOf(summary)), direct);
   });
 });

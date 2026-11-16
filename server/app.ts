@@ -12,6 +12,8 @@ import {
   type ApiErrorBody,
   type FieldError,
 } from '../shared/studio';
+import { handleMcpRequest, MCP_PATH } from '../mcp/http';
+import { createStudioClient } from '../mcp/studio';
 import { HttpError, type ReleaseStore } from './store';
 
 export interface AppOptions {
@@ -88,6 +90,10 @@ export function createApp(store: ReleaseStore, { corsOrigins }: AppOptions): Hon
   });
 
   app.route('/api/studio', api);
+
+  // Remote MCP endpoint (claude.ai connector). Its Studio tools call this same API in-process.
+  const studio = createStudioClient(async (path) => api.request(path));
+  app.all(MCP_PATH, (c) => handleMcpRequest(c.req.raw, studio));
 
   app.notFound((c) => errorResponse(c, 404, 'not_found', `No route for ${c.req.method} ${c.req.path}.`));
   app.onError((err, c) => {

@@ -176,9 +176,16 @@ curl -X PATCH "$API/releases/11.16.1" -H "Content-Type: application/json" -d '{"
 curl -X DELETE "$API/releases/11.17.1"
 ```
 
-## MCP server (Claude Desktop)
+## MCP server (Claude Desktop and claude.ai)
 
-`mcp/` is a [Model Context Protocol](https://modelcontextprotocol.io) server. With it, Claude Desktop can answer questions about marketplace components ("find top-rated AI connectors for 11.0", "compare X and Y") from the real catalog and the Studio Releases API. It runs locally over stdio, and Claude Desktop starts it automatically when it launches.
+`mcp/` is a [Model Context Protocol](https://modelcontextprotocol.io) server. With it, Claude can answer questions about marketplace components ("find top-rated AI connectors for 11.0", "compare X and Y") from the real catalog and the Studio Releases API. One server definition (`mcp/server.ts`) is exposed two ways:
+
+| Client         | Transport                 | Entry point    | Where it runs                                         |
+| -------------- | ------------------------- | -------------- | ----------------------------------------------------- |
+| Claude Desktop | stdio                     | `mcp/stdio.ts` | On your machine; Claude Desktop starts it             |
+| claude.ai      | Streamable HTTP at `/mcp` | `mcp/http.ts`  | The Cloudflare Worker (and `npm run dev:api` locally) |
+
+**Remote endpoint:** `https://component-marketplace.component-marketplace.workers.dev/mcp`. It's stateless (a fresh server per request, JSON responses) and needs no authentication, because it only reads the same public catalog and release data the site already shows. Inside the Worker, the Studio tools call the API in-process rather than over the network.
 
 | Tool                     | What it returns                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -196,7 +203,13 @@ Resources: `marketplace://taxonomy` and `marketplace://component/{slug}`.
 
 The catalog is imported straight from `src/data/components.ts`, and search reuses the Explore filter logic, so the answers match what the site shows. **User submissions are out of scope**: they live in each browser's `localStorage`, so the server can't see them.
 
-### Setup
+### claude.ai setup
+
+1. Deploy (`npm run deploy`) if `/mcp` isn't live yet.
+2. In claude.ai, open **Settings → Connectors → Add custom connector**. Name it `Component Marketplace`, enter the remote endpoint URL above, leave the OAuth fields empty, and click **Add**.
+3. In a chat, enable it from the **+ → Connectors** menu.
+
+### Claude Desktop setup
 
 1. `npm install`
 2. Try it with the MCP Inspector: `npm run mcp:inspect`, then open the URL it prints and call a tool.
@@ -210,7 +223,7 @@ The catalog is imported straight from `src/data/components.ts`, and search reuse
          "args": [
            "--import",
            "file:///C:/path/to/component-marketplace/node_modules/tsx/dist/loader.mjs",
-           "C:\\path\\to\\component-marketplace\\mcp\\server.ts"
+           "C:\\path\\to\\component-marketplace\\mcp\\stdio.ts"
          ],
          "env": {
            "STUDIO_API_URL": "https://component-marketplace.component-marketplace.workers.dev/api/studio"
@@ -224,6 +237,8 @@ The catalog is imported straight from `src/data/components.ts`, and search reuse
 
 4. Fully restart Claude Desktop: quit it from the system tray, because closing the window isn't enough. The tools appear under the **+ → Connectors** menu in a chat.
 
+Claude Desktop also shows connectors you add on claude.ai, because they're tied to your account. You can use the remote connector there too and skip the local setup. The local server is useful when you're offline, or when you want to test changes before deploying.
+
 Example questions: _"Find the top-rated Artificial Intelligence components compatible with platform 11.0"_, _"Tell me about the PDF Generator"_, _"Compare Excel Importer and Data Importer"_, _"Which verified publishers are in Germany?"_, _"What's the latest Studio release and what changed in it?"_
 
 ### Troubleshooting
@@ -232,10 +247,12 @@ Example questions: _"Find the top-rated Artificial Intelligence components compa
 - `npm run mcp` starts the server by hand. It waits silently for MCP messages on stdin, which is expected.
 - stdout carries the protocol, so code in `mcp/` must log only with `console.error`.
 - Studio tools return an error that tells Claude the API is unreachable rather than failing, so the catalog tools keep working offline.
+- Remote endpoint: `npm run dev:api` serves it at `http://localhost:5174/mcp`. To check the deployed one, run `npx @modelcontextprotocol/inspector`, choose **Streamable HTTP** and enter the `/mcp` URL. `npx wrangler tail` streams Worker logs.
+- The Worker uses the SDK's `CfWorkerJsonSchemaValidator` because Workers forbid `eval`, which the default validator (Ajv) relies on.
 
 ## Testing
 
-`npm run test:mcp` covers the MCP tool handlers (search filters, sorting, limits, slug/id/name lookup, not-found suggestions, reviews, publishers, compare) and an in-memory client ↔ server round trip (tool list, calls, `isError`, resources).
+`npm run test:mcp` covers the MCP tool handlers (search filters, sorting, limits, slug/id/name lookup, not-found suggestions, reviews, publishers, compare) the Studio client (paths, query strings, error messages), an in-memory client ↔ server round trip (tool list, calls, `isError`, resources), and the remote `/mcp` endpoint over real HTTP against a temporary API server.
 
 `npm run test:api` starts the API on a random port with a temporary data directory and covers every endpoint, filter, sort and pagination edge, every rule and error code, LATEST demotion and delete protection, persistence across a restart, and concurrent writes (20 parallel creates, conflicting creates).
 
@@ -343,8 +360,8 @@ src/
 shared/studio.ts       Zod schemas, types and rules shared by the API and the client
 server/                Studio Releases API (app.ts routes, store.ts rules, file-persistence.ts JSON file storage,
                        server.ts, index.ts CLI, worker.ts Cloudflare Worker entry with KV storage)
-mcp/                   MCP server for Claude Desktop (server.ts wiring, tools.ts pure handlers, schemas.ts inputs,
-                       studio.ts Studio API client, result.ts ok/fail result type)
+mcp/                   MCP server (server.ts tools/resources, stdio.ts Claude Desktop entry, http.ts remote /mcp
+                       entry, tools.ts pure handlers, schemas.ts inputs, studio.ts Studio API client, result.ts)
 wrangler.jsonc         Cloudflare Workers deployment config
 tests/api/             API tests (node:test)
 tests/mcp/             MCP server tests (node:test)

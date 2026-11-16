@@ -1,5 +1,5 @@
 // Cloudflare Worker entry. Static assets (the Vite build in dist/) are served by the
-// platform; only /api/* reaches this code (see run_worker_first in wrangler.jsonc).
+// platform; only /api/* and /mcp reach this code (see run_worker_first in wrangler.jsonc).
 import type { StudioRelease } from '../shared/studio';
 import { createApp } from './app';
 import { ReleaseStore, type Persistence } from './store';
