@@ -176,7 +176,66 @@ curl -X PATCH "$API/releases/11.16.1" -H "Content-Type: application/json" -d '{"
 curl -X DELETE "$API/releases/11.17.1"
 ```
 
+## MCP server (Claude Desktop)
+
+`mcp/` is a [Model Context Protocol](https://modelcontextprotocol.io) server. With it, Claude Desktop can answer questions about marketplace components ("find top-rated AI connectors for 11.0", "compare X and Y") from the real catalog and the Studio Releases API. It runs locally over stdio, and Claude Desktop starts it automatically when it launches.
+
+| Tool                     | What it returns                                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `search_components`      | Free-text search plus type, category, industry, support, publisher, license, rating, platform version and featured filters; sortable |
+| `get_component`          | Full details for a slug, id or name, with close-match suggestions when it isn't found                                                |
+| `get_component_reviews`  | Reviews (most helpful first), average rating and star breakdown                                                                      |
+| `get_component_releases` | A component's release history and notes                                                                                              |
+| `list_publishers`        | Publishers, optionally filtered by verified status or country, with component counts                                                 |
+| `list_taxonomy`          | Valid types, categories, industries, support levels, licenses and platform versions                                                  |
+| `compare_components`     | 2–4 components side by side                                                                                                          |
+| `get_studio_summary`     | Latest Studio release, recommended LTS and supported lines (from the Studio API)                                                     |
+| `get_studio_releases`    | Studio releases (filter, sort, paginate), or one version with its notes                                                              |
+
+Resources: `marketplace://taxonomy` and `marketplace://component/{slug}`.
+
+The catalog is imported straight from `src/data/components.ts`, and search reuses the Explore filter logic, so the answers match what the site shows. **User submissions are out of scope**: they live in each browser's `localStorage`, so the server can't see them.
+
+### Setup
+
+1. `npm install`
+2. Try it with the MCP Inspector: `npm run mcp:inspect`, then open the URL it prints and call a tool.
+3. Add the server to Claude Desktop's config. Open **Settings → Developer → Edit Config**. The file is `%APPDATA%\Claude\claude_desktop_config.json` for the regular installer, or `%LOCALAPPDATA%\Packages\Claude_<id>\LocalCache\Roaming\Claude\claude_desktop_config.json` for the Microsoft Store build. Merge this into `mcpServers`, with your own repo path:
+
+   ```json
+   {
+     "mcpServers": {
+       "component-marketplace": {
+         "command": "node",
+         "args": [
+           "--import",
+           "file:///C:/path/to/component-marketplace/node_modules/tsx/dist/loader.mjs",
+           "C:\\path\\to\\component-marketplace\\mcp\\server.ts"
+         ],
+         "env": {
+           "STUDIO_API_URL": "https://component-marketplace.component-marketplace.workers.dev/api/studio"
+         }
+       }
+     }
+   }
+   ```
+
+   This calls `node` with tsx's loader by absolute path rather than through `npx`, which avoids Windows PATH and `.cmd` shim problems. Point `STUDIO_API_URL` at `http://localhost:5174/api/studio` to use a local `npm run dev:api` instead of the deployed Worker. If you leave it out, the server uses the deployed Worker.
+
+4. Fully restart Claude Desktop: quit it from the system tray, because closing the window isn't enough. The tools appear under the **+ → Connectors** menu in a chat.
+
+Example questions: _"Find the top-rated Artificial Intelligence components compatible with platform 11.0"_, _"Tell me about the PDF Generator"_, _"Compare Excel Importer and Data Importer"_, _"Which verified publishers are in Germany?"_, _"What's the latest Studio release and what changed in it?"_
+
+### Troubleshooting
+
+- Logs: `%APPDATA%\Claude\logs\mcp-server-component-marketplace.log` (Store build: under the same `LocalCache\Roaming\Claude\logs` folder). On startup, the server logs `[mcp] component-marketplace server running on stdio` to stderr.
+- `npm run mcp` starts the server by hand. It waits silently for MCP messages on stdin, which is expected.
+- stdout carries the protocol, so code in `mcp/` must log only with `console.error`.
+- Studio tools return an error that tells Claude the API is unreachable rather than failing, so the catalog tools keep working offline.
+
 ## Testing
+
+`npm run test:mcp` covers the MCP tool handlers (search filters, sorting, limits, slug/id/name lookup, not-found suggestions, reviews, publishers, compare) and an in-memory client ↔ server round trip (tool list, calls, `isError`, resources).
 
 `npm run test:api` starts the API on a random port with a temporary data directory and covers every endpoint, filter, sort and pagination edge, every rule and error code, LATEST demotion and delete protection, persistence across a restart, and concurrent writes (20 parallel creates, conflicting creates).
 
@@ -284,7 +343,10 @@ src/
 shared/studio.ts       Zod schemas, types and rules shared by the API and the client
 server/                Studio Releases API (app.ts routes, store.ts rules, file-persistence.ts JSON file storage,
                        server.ts, index.ts CLI, worker.ts Cloudflare Worker entry with KV storage)
+mcp/                   MCP server for Claude Desktop (server.ts wiring, tools.ts pure handlers, schemas.ts inputs,
+                       studio.ts Studio API client, result.ts ok/fail result type)
 wrangler.jsonc         Cloudflare Workers deployment config
 tests/api/             API tests (node:test)
+tests/mcp/             MCP server tests (node:test)
 tests/e2e/             browser test runner and suites (marketplace, studio, submit, studio-manage)
 ```
