@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "component-marketplace": {
+      "type": "http",
+      "url": "https://component-marketplace.component-marketplace.workers.dev/mcp"
+    }
+  }
+}
