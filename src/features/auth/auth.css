@@ -34,12 +34,6 @@
   align-self: flex-start;
 }
 
-.login-hint code {
-  background: var(--subtle);
-  border-radius: 3px;
-  padding: 0 4px;
-}
-
 .app-status {
   min-height: 60vh;
   display: flex;

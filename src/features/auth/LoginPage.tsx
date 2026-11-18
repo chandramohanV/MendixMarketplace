@@ -85,10 +85,6 @@ export default function LoginPage() {
         <button className="btn btn-primary block" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>
-        <p className="small muted login-hint">
-          Demo accounts: <code>user</code> / <code>user123</code> (browse) and <code>admin</code> /{' '}
-          <code>admin123</code> (browse and edit).
-        </p>
       </form>
     </div>
   );

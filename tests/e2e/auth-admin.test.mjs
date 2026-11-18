@@ -19,7 +19,7 @@ export default async function authAdmin(t) {
 
   await go(guest, '/publishers');
   check('signed-out visitors see the login screen on any URL', (await count(guest, '.login-card')) === 1);
-  check('the login screen lists the demo accounts', (await text(guest, '.login-hint')).includes('admin123'));
+  check('the login screen does not reveal any password', !(await text(guest, '.login-card')).includes('admin123'));
 
   await guest.click('.login-card button[type=submit]');
   check(
