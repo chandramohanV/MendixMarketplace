@@ -76,13 +76,15 @@ The sidebar collapses behind the menu button and filters open as a slide-in draw
 
 ## Features
 
+- **Sign-in with two roles** – every page needs a signed-in user. A normal **user** can browse everything; an **admin** can also add, edit and delete components and Studio Pro releases. See [Sign-in and roles](#sign-in-and-roles)
+- **Admin console** (`/admin`, admins only) – search, add, edit and delete catalog components (saved on the server, visible to everyone right away), with a link to **Manage Studio Pro releases** (`/studio/manage`)
 - **Explore page** – hero search, curated sections (Smarter with AI, From our Partners, What's New, Most Downloaded)
 - **Filtering** – compatibility, content type, support level, category, industry and rating; filters switch the page to a results view with removable chips, sorting and pagination (all state lives in the URL)
 - **Component detail** – Overview, Documentation, Releases, Reviews and Developers tabs; version picker, download, favorite, share, write a review
 - **My Marketplace** – favorites, download history, your reviews and **My submissions** (saved in `localStorage`)
 - **Contribute** (`/submit`) – submit a component through a validated 4-step form with draft autosave; submissions go _pending → published_ (the demo reviewer approves after ~5 s, or instantly via "Approve now") and then appear in Explore, search, filters, sorting, "What's New" and on their own detail page. Pending submissions are visible only to you and can be edited (`/submit?edit=<id>`) or withdrawn
 - **Studio download page** (`/studio`) – LTS / latest downloads, release types, release table with version search, supported-version filter, date sorting, paging and release-notes dialog; all data comes from the Studio API, with loading skeletons and error states with Retry
-- **Studio Releases API** – a TypeScript REST API (Hono + Zod) with create, read, update and delete, file-backed persistence, and a **Manage releases** page (`/studio/manage`). See [Studio Releases API](#studio-releases-api)
+- **Studio Releases API** – a TypeScript REST API (Hono + Zod) with create, read, update and delete, file-backed persistence, and a **Manage releases** page (`/studio/manage`, admins only). See [Studio Releases API](#studio-releases-api)
 - **Publishers** directory
 - Responsive: collapsible sidebar, slide-in filter drawer on small screens
 
@@ -105,6 +107,33 @@ npm run cf:dev    # run the Cloudflare Worker build locally
 
 The project is migrating to TypeScript incrementally (`allowJs`): the data model, store, catalog, shared UI, the Studio API, and the Explore, Detail, Studio, Studio Manage, Submit and My Marketplace pages are `.ts`/`.tsx`; the remaining pages are still `.jsx`. Shared domain types live in `src/types.ts`.
 
+## Sign-in and roles
+
+| Username | Password   | Role  | Can do                                                                  |
+| -------- | ---------- | ----- | ----------------------------------------------------------------------- |
+| `user`   | `user123`  | user  | Browse every page                                                       |
+| `admin`  | `admin123` | admin | Everything a user can, plus the Admin console and Manage releases pages |
+
+- Change the passwords with the `USER_PASSWORD` and `ADMIN_PASSWORD` env vars (locally) or Worker secrets (on Cloudflare: `npx wrangler secret put ADMIN_PASSWORD`). The defaults are for the demo only.
+- Signing in (`POST /api/auth/login`) sets an HttpOnly, `SameSite=Lax` session cookie signed with `AUTH_SECRET` (8-hour lifetime). Locally a random key is used when `AUTH_SECRET` is unset, so restarting the API signs everybody out. `GET /api/auth/me` returns `{ user }` (`null` when signed out) and `POST /api/auth/logout` clears the cookie.
+- The API enforces the rules; the UI only hides what a role can't use:
+  - `/api/components` needs a session (`401 unauthenticated` without one).
+  - Every write (`POST`, `PUT`, `PATCH`, `DELETE`) to `/api/studio` or `/api/components` needs an admin (`403 forbidden` for a normal user).
+  - Studio **reads** stay public, because the Claude Desktop MCP server reads them over HTTP, and the remote `/mcp` endpoint already shows the same data publicly.
+- The static app is served without a check, but until you sign in it shows only the login screen; the catalog is loaded from the API after sign-in.
+
+### Components API (under `/api/components`)
+
+| Method | Path     | Who   | Description                                                                                                                                          | Success          |
+| ------ | -------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| GET    | `/`      | users | `{ items }`: every component                                                                                                                         | 200              |
+| GET    | `/:slug` | users | One component                                                                                                                                        | 200              |
+| POST   | `/`      | admin | Create. Body: the editable fields in `ComponentInputSchema` (`shared/components.ts`). The server sets id, slug, ratings, dates and the first release | 201 + `Location` |
+| PUT    | `/:slug` | admin | Replace the editable fields. The slug never changes; a new `version` adds a release entry                                                            | 200              |
+| DELETE | `/:slug` | admin | Delete                                                                                                                                               | 204              |
+
+Names are unique, ignoring case (`409`). Free components must cost 0 and Paid / Free-trial ones more than 0 (`422`). The data is seeded from `src/data/components.ts` into `server/data/components.json` (Workers KV key `components` on Cloudflare).
+
 ## Studio Releases API
 
 A small REST API for the releases shown on `/studio`, in `server/` (Hono, run by `tsx`). Request and response shapes are Zod schemas in `shared/studio.ts`, shared with the browser client in `src/api/studio.ts`, and every client response is validated against them.
@@ -112,7 +141,7 @@ A small REST API for the releases shown on `/studio`, in `server/` (Hono, run by
 - **Port:** `5174` (`PORT` to change). In development, Vite proxies `/api` to it (`API_URL` to change the target).
 - **Data:** `server/data/releases.json` (gitignored; `DATA_DIR` to change). It is seeded from `src/data/studio.js` on first run; `npm run api:reset` reseeds it. Writes are serialized and atomic (temp file + rename). On Cloudflare, the same data lives in Workers KV instead (see [Deploying to Cloudflare](#deploying-to-cloudflare)).
 - **CORS:** only the Vite origin (`http://localhost:5173`; `CORS_ORIGIN` takes a comma-separated list).
-- **No authentication.** Anyone who can reach the API can create, change and delete releases. This is a demo; put real auth in front of it before exposing it anywhere.
+- **Authentication:** reads are public; creating, changing and deleting releases needs an admin session (see [Sign-in and roles](#sign-in-and-roles)).
 
 ### Endpoints (under `/api/studio`)
 
@@ -254,14 +283,15 @@ Example questions: _"Find the top-rated Artificial Intelligence components compa
 
 `npm run test:mcp` covers the MCP tool handlers (search filters, sorting, limits, slug/id/name lookup, not-found suggestions, reviews, publishers, compare) the Studio client (paths, query strings, error messages), an in-memory client ↔ server round trip (tool list, calls, `isError`, resources), and the remote `/mcp` endpoint over real HTTP against a temporary API server.
 
-`npm run test:api` starts the API on a random port with a temporary data directory and covers every endpoint, filter, sort and pagination edge, every rule and error code, LATEST demotion and delete protection, persistence across a restart, and concurrent writes (20 parallel creates, conflicting creates).
+`npm run test:api` starts the API on a random port with a temporary data directory and covers sign-in (default accounts, password overrides, tampered and expired tokens, cookie flags, who may read and write what), the components API (create, update, delete, validation, duplicate names, persistence) and every Studio endpoint, filter, sort and pagination edge, every rule and error code, LATEST demotion and delete protection, persistence across a restart, and concurrent writes (20 parallel creates, conflicting creates).
 
-`npm run test:e2e` starts the Studio API (temporary data) and a Vite dev server, then drives a locally installed Edge or Chrome (headless, via `puppeteer-core`) through four suites:
+`npm run test:e2e` starts the Studio API (temporary data) and a Vite dev server, then drives a locally installed Edge or Chrome (headless, via `puppeteer-core`) through five suites (each page signs in as the admin unless a suite asks for another role):
 
 - marketplace;
 - Studio page (expected values are read from the API);
 - the contribute flow (every validation rule, drafts, review/edit, double-submit protection, pending → published, edit, withdraw);
-- managing releases (create, edit, delete, client and server validation, duplicate version, LATEST promotion on `/studio`, delete-LATEST refusal, API-down error states with Retry).
+- managing releases (create, edit, delete, client and server validation, duplicate version, LATEST promotion on `/studio`, delete-LATEST refusal, API-down error states with Retry);
+- sign-in and the admin console (login gate, wrong password, normal user kept out of `/admin` and `/studio/manage`, sign out, adding, editing and deleting a component).
 
 All suites also check mobile layouts. A run fails on any failed check or unexpected browser console error. Chrome logs every deliberate `409`/`422` response and every simulated network failure as a console error, so suites list those explicitly with `t.expectConsoleErrors(pattern, fn)`, scoped to that step.
 
@@ -280,7 +310,8 @@ The app runs on the Cloudflare Workers **free plan** as a single Worker:
 - **Live URL:** https://component-marketplace.component-marketplace.workers.dev
 - **Static app:** the Vite build in `dist/` is served as Workers static assets. Client-side routes such as `/studio` fall back to `index.html`.
 - **Studio API:** `/api/*` runs `server/worker.ts`, which uses the same Hono app as local dev (`server/app.ts`).
-- **Data:** release data is stored in the Workers KV namespace `component-marketplace-studio-kv` (binding `STUDIO_KV`, key `releases`), not in a file. It is seeded from `src/data/studio.js` on the first request.
+- **Data:** releases and components are stored in the Workers KV namespace `component-marketplace-studio-kv` (binding `STUDIO_KV`, keys `releases` and `components`), not in files. They are seeded on the first request.
+- **Secrets:** `AUTH_SECRET` (required; signs session cookies) and optionally `USER_PASSWORD` / `ADMIN_PASSWORD`, set with `npx wrangler secret put <NAME>`. Without `AUTH_SECRET` every API call answers `500 auth_not_configured`.
 - **Config:** everything is in `wrangler.jsonc`, including the account ID.
 
 ### Deploying a new change
@@ -334,9 +365,9 @@ Rolling back changes only the code. It does not undo changes to the release data
 ### Free plan limits and caveats
 
 - **Workers:** 100,000 API requests per day. Static asset requests are free and don't count.
-- **KV:** 100,000 reads and 1,000 writes per day. Each API request does one read; each create, edit or delete does one write.
+- **KV:** 100,000 reads and 1,000 writes per day. Each API request does two reads (releases and components); each create, edit or delete does one write.
 - **Eventual consistency:** KV can take up to about 60 seconds to show an edit to visitors in other regions.
-- **No authentication:** anyone with the URL can change releases (see [Studio Releases API](#studio-releases-api)). To restrict it, put the site behind Cloudflare Access (Zero Trust; free for up to 50 users).
+- **Demo accounts:** sign-in uses two built-in accounts (see [Sign-in and roles](#sign-in-and-roles)). Set the `ADMIN_PASSWORD` and `USER_PASSWORD` secrets before sharing the URL; for real users, put the site behind Cloudflare Access (Zero Trust; free for up to 50 users).
 
 You can see usage, logs and the KV data in the Cloudflare dashboard under **Workers & Pages → component-marketplace** and **Storage & Databases → KV**.
 
@@ -357,13 +388,17 @@ src/
   components/          layout shell, cards and badges (ui.tsx), Studio modal/badges (studio-ui.tsx), icons
   pages/               Explore (Browse), Detail, Studio, StudioManage, MyMarketplace, Publishers, Submit, Misc
   index.css            design tokens and all styles
-shared/studio.ts       Zod schemas, types and rules shared by the API and the client
-server/                Studio Releases API (app.ts routes, store.ts rules, file-persistence.ts JSON file storage,
-                       server.ts, index.ts CLI, worker.ts Cloudflare Worker entry with KV storage)
+shared/                Zod schemas shared by the API and the client (studio.ts releases, components.ts catalog
+                       editing, auth.ts sign-in)
+src/features/auth/     login screen and sign-in API client
+src/features/admin/    admin console, component form and the RequireAdmin route guard
+server/                API (app.ts routes and access rules, auth.ts accounts/sessions/middleware, store.ts release
+                       rules, component-store.ts catalog rules, persisted-list.ts serialized saves,
+                       file-persistence.ts JSON files, server.ts, index.ts CLI, worker.ts Cloudflare entry with KV)
 mcp/                   MCP server (server.ts tools/resources, stdio.ts Claude Desktop entry, http.ts remote /mcp
                        entry, tools.ts pure handlers, schemas.ts inputs, studio.ts Studio API client, result.ts)
 wrangler.jsonc         Cloudflare Workers deployment config
 tests/api/             API tests (node:test)
 tests/mcp/             MCP server tests (node:test)
-tests/e2e/             browser test runner and suites (marketplace, studio, submit, studio-manage)
+tests/e2e/             browser test runner and suites (marketplace, studio, submit, studio-manage, auth-admin)
 ```

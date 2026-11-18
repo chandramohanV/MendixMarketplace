@@ -1,10 +1,12 @@
 // Studio Releases API tests: a real server on a random port with a temporary data directory.
+// Every request is sent as the admin; sign-in and role rules are covered in auth.api.test.ts.
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { startServer, type RunningServer } from '../../server/server';
+import { signIn } from './helpers';
 import {
   todayISO,
   type ApiErrorBody,
@@ -16,6 +18,7 @@ import {
 let srv: RunningServer;
 let dir: string;
 let base: string;
+let adminCookie: string;
 
 /**
  * Every response shape the API returns, merged into one type. Each test reads only the fields that
@@ -40,7 +43,11 @@ async function call(
   const hasBody = payload !== undefined || opts.raw !== undefined;
   const res = await fetch(base + p, {
     method,
-    headers: { ...(hasBody ? { 'Content-Type': 'application/json' } : {}), ...opts.headers },
+    headers: {
+      Cookie: adminCookie,
+      ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+      ...opts.headers,
+    },
     body: opts.raw ?? (payload !== undefined ? JSON.stringify(payload) : undefined),
   });
   const text = await res.text();
@@ -69,6 +76,7 @@ before(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'studio-api-'));
   srv = await startServer({ port: 0, dataDir: dir });
   base = `${srv.url}/api/studio`;
+  adminCookie = await signIn(srv.url, 'admin');
 });
 after(async () => {
   await srv.close();
@@ -399,6 +407,7 @@ describe('persistence and concurrency', () => {
     await srv.close();
     srv = await startServer({ port: 0, dataDir: dir });
     base = `${srv.url}/api/studio`;
+    adminCookie = await signIn(srv.url, 'admin'); // a restarted server has a new signing key
     assert.equal(await allReleases(), total);
     assert.equal(await latestVersion(), '11.16.5');
     assert.equal((await get('/releases/12.2.0')).status, 200);

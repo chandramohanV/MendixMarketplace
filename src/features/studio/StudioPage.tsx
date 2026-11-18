@@ -6,7 +6,7 @@ import { getSummary, listReleases } from './api';
 import { ReleaseNotesDialog, type DownloadHandler } from './ReleaseNotesDialog';
 import { RELEASES_PAGE_SIZE, ReleasesSection } from './ReleasesSection';
 import { StudioHero } from './StudioHero';
-import { useApiQuery } from './useApiQuery';
+import { useApiQuery } from '../../lib/useApiQuery';
 import { useReleaseFilters } from './useReleaseFilters';
 
 export default function StudioPage() {

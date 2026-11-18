@@ -1,14 +1,23 @@
-// Pure catalog logic: the dummy catalog combined with the user's submissions (see store/useCatalog).
+// Pure catalog logic: the server's catalog combined with the user's submissions (see store/useCatalog).
 import { COLORS, ICONS, PLATFORM_VERSIONS } from '../data/components';
 import type { Component, Submission } from '../types';
 import { hashString } from './hash';
 
 const SUBMITTER_NAME = 'Demo User';
 
+/** Platform versions a component supports, newest first, given its minimum platform version. */
+export function compatibleVersions(minPlatform: string): string[] {
+  const minIndex = PLATFORM_VERSIONS.indexOf(minPlatform);
+  return minIndex >= 0 ? PLATFORM_VERSIONS.slice(0, minIndex + 1) : [minPlatform];
+}
+
+/** Stable card colour and icon for components that don't come from the generator. */
+export const colorFor = (name: string): string => COLORS[hashString(name) % COLORS.length];
+export const iconFor = (slug: string): string => ICONS[hashString(slug) % ICONS.length];
+
 /** Turns a submission into a marketplace component (used for detail pages and listings). */
 export function submissionToComponent(s: Submission): Component {
   const date = s.updatedAt.slice(0, 10);
-  const minIndex = PLATFORM_VERSIONS.indexOf(s.minPlatform);
   return {
     id: s.id,
     slug: s.slug,
@@ -28,11 +37,11 @@ export function submissionToComponent(s: Submission): Component {
     downloads: 0,
     version: s.version,
     minPlatform: s.minPlatform,
-    compatible: minIndex >= 0 ? PLATFORM_VERSIONS.slice(0, minIndex + 1) : [s.minPlatform],
+    compatible: compatibleVersions(s.minPlatform),
     updated: date,
     created: s.submittedAt.slice(0, 10),
-    color: COLORS[hashString(s.name) % COLORS.length],
-    icon: ICONS[hashString(s.slug) % ICONS.length],
+    color: colorFor(s.name),
+    icon: iconFor(s.slug),
     featured: false,
     tags: [s.type.toLowerCase(), s.category.toLowerCase(), 'community'],
     short: s.short,
@@ -48,7 +57,7 @@ export function submissionToComponent(s: Submission): Component {
 const normalizeName = (name: string) => name.trim().toLowerCase();
 
 export interface Catalog {
-  /** Everything public: the dummy catalog plus published submissions. */
+  /** Everything public: the server's catalog plus published submissions. */
   components: Component[];
   /** Finds any component by slug, including the user's own pending/rejected submissions. */
   findBySlug: (slug: string) => Component | undefined;

@@ -71,20 +71,53 @@ export const setFile = (page, selector, fileName, size) =>
 /** Reads and parses a localStorage value in the page (null when missing). */
 export const readStorage = (page, key) => page.evaluate((k) => JSON.parse(localStorage.getItem(k) || 'null'), key);
 
-/** Minimal Studio API client for reading expected values and setting up state. */
-export function apiClient(apiBase) {
+/** The default accounts (see server/auth.ts). */
+export const ACCOUNTS = {
+  user: { username: 'user', password: 'user123' },
+  admin: { username: 'admin', password: 'admin123' },
+};
+
+/** Signs in against the API directly and returns the `Cookie` header value. */
+export async function signInCookie(apiOrigin, role) {
+  const res = await fetch(`${apiOrigin}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ACCOUNTS[role]),
+  });
+  const cookie = res.headers.get('set-cookie');
+  if (!res.ok || !cookie) throw new Error(`Signing in as ${role} failed with ${res.status}`);
+  return cookie.split(';')[0];
+}
+
+/** Signs the page in as `role` through the app's own API, so the browser holds the session cookie. */
+export async function signInPage(page, base, role) {
+  await page.goto(base + '/', { waitUntil: 'networkidle0' });
+  const status = await page.evaluate(async (credentials) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    return res.status;
+  }, ACCOUNTS[role]);
+  if (status !== 200) throw new Error(`Signing the page in as ${role} failed with ${status}`);
+}
+
+/** Minimal Studio API client for reading expected values and setting up state; `cookie` authorizes writes. */
+export function apiClient(apiBase, cookie) {
+  const headers = cookie ? { Cookie: cookie } : {};
   return {
     async get(path) {
-      const res = await fetch(apiBase + path);
+      const res = await fetch(apiBase + path, { headers });
       return { status: res.status, body: res.status === 204 ? null : await res.json() };
     },
     async json(path) {
-      return (await fetch(apiBase + path)).json();
+      return (await fetch(apiBase + path, { headers })).json();
     },
     async send(method, path, body) {
       const res = await fetch(apiBase + path, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       return res.status;

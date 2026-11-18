@@ -1,5 +1,4 @@
-// Release store: all mutations are serialized and saved through a pluggable backend
-// (a JSON file under Node — see file-persistence.ts — or Workers KV on Cloudflare).
+// Release store: the Studio release rules on top of a PersistedList (see persisted-list.ts).
 import type { z } from 'zod';
 import {
   compareVersionsDesc,
@@ -8,7 +7,6 @@ import {
   parseVersion,
   RELEASE_TYPE_INFO,
   type CreateReleaseSchema,
-  type FieldError,
   type ListQuerySchema,
   type PatchReleaseSchema,
   type ReleaseListItem,
@@ -17,6 +15,8 @@ import {
   type StudioSummary,
   type UpdateReleaseSchema,
 } from '../shared/studio';
+import { HttpError } from './http-error';
+import { PersistedList, type Persistence } from './persisted-list';
 import { buildSeed } from './seed';
 
 type CreateBody = z.output<typeof CreateReleaseSchema>;
@@ -24,28 +24,8 @@ type UpdateBody = z.output<typeof UpdateReleaseSchema>;
 type PatchBody = z.output<typeof PatchReleaseSchema>;
 type ListParams = z.output<typeof ListQuerySchema>;
 
-/** A rule violation that maps directly to an HTTP error response. */
-export class HttpError extends Error {
-  constructor(
-    public status: 400 | 404 | 409 | 422,
-    public code: string,
-    message: string,
-    public details?: FieldError[],
-  ) {
-    super(message);
-  }
-}
-
 const notFound = (version: string) => new HttpError(404, 'not_found', `Release ${version} was not found.`);
 const withoutNotes = ({ notes: _notes, ...rest }: StudioRelease): ReleaseListItem => rest;
-
-/** Where the release list lives. `load` returns null when nothing has been stored yet. */
-export interface Persistence {
-  /** Human-readable location, for log messages. */
-  readonly location: string;
-  load(): Promise<StudioRelease[] | null>;
-  save(data: StudioRelease[]): Promise<void>;
-}
 
 type Comparator = (a: StudioRelease, b: StudioRelease) => number;
 const SORTS: Record<ListParams['sort'], Comparator> = {
@@ -55,27 +35,20 @@ const SORTS: Record<ListParams['sort'], Comparator> = {
 };
 
 export class ReleaseStore {
-  private releases: StudioRelease[] = [];
-  private queue: Promise<unknown> = Promise.resolve();
-
-  private constructor(private readonly persistence: Persistence) {}
+  private constructor(private readonly data: PersistedList<StudioRelease>) {}
 
   /** Where the data is stored (for log messages). */
   get file(): string {
-    return this.persistence.location;
+    return this.data.location;
+  }
+
+  private get releases(): readonly StudioRelease[] {
+    return this.data.items;
   }
 
   /** Loads the store from `persistence`, seeding it on first run. */
-  static async load(persistence: Persistence): Promise<ReleaseStore> {
-    const store = new ReleaseStore(persistence);
-    const stored = await persistence.load();
-    if (stored) {
-      store.releases = stored;
-    } else {
-      store.releases = buildSeed();
-      await persistence.save(store.releases);
-    }
-    return store;
+  static async load(persistence: Persistence<StudioRelease>): Promise<ReleaseStore> {
+    return new ReleaseStore(await PersistedList.open(persistence, buildSeed));
   }
 
   // ---------- reads ----------
@@ -221,18 +194,8 @@ export class ReleaseStore {
     release.type = type;
   }
 
-  // ---------- persistence ----------
-  /** Runs `fn` on a copy of the data, persists it atomically, then commits. Calls never overlap. */
   private mutate<T>(fn: (draft: StudioRelease[]) => T): Promise<T> {
-    const run = this.queue.then(async () => {
-      const draft = structuredClone(this.releases);
-      const result = fn(draft);
-      await this.persistence.save(draft);
-      this.releases = draft;
-      return structuredClone(result);
-    });
-    this.queue = run.catch(() => undefined); // keep the queue alive after a rejected write
-    return run;
+    return this.data.mutate(fn);
   }
 }
 

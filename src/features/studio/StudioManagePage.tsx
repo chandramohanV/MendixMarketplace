@@ -8,7 +8,7 @@ import { useNotify } from '../../store/contexts';
 import { listReleases } from './api';
 import { CreateReleaseDialog, DeleteReleaseDialog, EditReleaseDialog } from './ReleaseDialogs';
 import { SkeletonRows, TypeBadge } from './ui';
-import { useApiQuery } from './useApiQuery';
+import { useApiQuery } from '../../lib/useApiQuery';
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 250;

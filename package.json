@@ -11,7 +11,7 @@
     "build": "vite build",
     "lint": "oxlint --deny-warnings",
     "typecheck": "tsc --noEmit",
-    "test:api": "tsx --test tests/api/studio.api.test.ts",
+    "test:api": "tsx --test tests/api/studio.api.test.ts tests/api/auth.api.test.ts tests/api/components.api.test.ts",
     "test:mcp": "tsx --test tests/mcp/mcp.test.ts",
     "test:e2e": "tsx tests/e2e/run.mjs",
     "preview": "vite preview",

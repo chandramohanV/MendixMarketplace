@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { COMPONENTS } from '../data/components';
 import { buildCatalog, type Catalog } from '../lib/catalog';
-import { useSubmissions } from './contexts';
+import { useServerCatalog, useSubmissions } from './contexts';
 
-/** The live catalog: dummy components plus the current user's submissions. */
+/** The live catalog: the server's components plus the current user's submissions. */
 export function useCatalog(): Catalog {
+  const { components } = useServerCatalog();
   const { submissions } = useSubmissions();
-  return useMemo(() => buildCatalog(COMPONENTS, submissions), [submissions]);
+  return useMemo(() => buildCatalog(components, submissions), [components, submissions]);
 }

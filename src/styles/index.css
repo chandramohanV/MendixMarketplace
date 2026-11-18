@@ -16,3 +16,5 @@
 @import '../features/my-marketplace/my-marketplace.css';
 @import '../features/studio/studio.css';
 @import '../features/studio/studio-manage.css';
+@import '../features/auth/auth.css';
+@import '../features/admin/admin.css';

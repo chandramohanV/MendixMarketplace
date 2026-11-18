@@ -1,0 +1,93 @@
+/* auth.css: sign-in screen, app-level loading/error states and the "admins only" notice. */
+
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--navy);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: var(--card-shadow-hover);
+}
+
+.login-card h1 {
+  font-size: 24px;
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.login-card p {
+  margin: 0;
+}
+
+.login-brand {
+  background: var(--navy);
+  border-radius: 4px;
+  padding: 8px 12px;
+  align-self: flex-start;
+}
+
+.login-hint code {
+  background: var(--subtle);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.app-status {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+
+.role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  padding: 1px 6px;
+  background: var(--navy-search);
+  border: 1px solid var(--navy-border);
+}
+
+.role-badge.admin {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.topbar-signout {
+  background: none;
+  border: 1px solid var(--navy-border);
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.topbar-signout:hover {
+  background: var(--navy-search);
+}
+
+@media (max-width: 720px) {
+  .topbar-username {
+    display: none;
+  }
+}

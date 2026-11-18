@@ -1,0 +1,41 @@
+/* admin.css: the admin console (reuses the manage-releases table styles from studio-manage.css). */
+
+.admin-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+
+.admin-section-head h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.admin .pagination {
+  margin-top: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.component-form select,
+.component-form input:not([type='checkbox']),
+.component-form textarea {
+  width: 100%;
+}
+
+.admin-denied {
+  padding-top: 64px;
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

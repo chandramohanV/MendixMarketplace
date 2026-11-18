@@ -4,7 +4,7 @@ import type { StudioRelease } from '../../../shared/studio';
 import { longDate } from '../../lib/dates';
 import { getRelease } from './api';
 import { TypeBadge } from './ui';
-import { useApiQuery } from './useApiQuery';
+import { useApiQuery } from '../../lib/useApiQuery';
 
 export type DownloadHandler = (release: { version: string }, platform: string) => void;
 

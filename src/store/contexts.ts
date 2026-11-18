@@ -1,6 +1,7 @@
 // Context objects and the hooks that read them. Providers live in the *Provider.tsx files.
 import { createContext, useContext, type Context } from 'react';
-import type { DownloadRecord, Review, Submission, SubmissionInput, SubmissionStatus } from '../types';
+import type { LoginInput, SessionUser } from '../../shared/auth';
+import type { Component, DownloadRecord, Review, Submission, SubmissionInput, SubmissionStatus } from '../types';
 
 export type Notify = (message: string) => void;
 
@@ -28,7 +29,26 @@ export interface SubmissionsValue {
   setSubmissionStatus: (id: number, status: SubmissionStatus) => void;
 }
 
+export interface AuthValue {
+  /** null while the session is being checked, or when nobody is signed in (see `isChecking`). */
+  user: SessionUser | null;
+  isChecking: boolean;
+  isAdmin: boolean;
+  /** Resolves on success; rejects with an ApiError (e.g. wrong password). */
+  login: (input: LoginInput) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+export interface ServerCatalogValue {
+  /** The components stored on the server (excludes the user's own submissions). */
+  components: Component[];
+  /** Fetches the catalog again, e.g. after an admin edit. */
+  reload: () => void;
+}
+
 export const NotifyContext = createContext<Notify | null>(null);
+export const AuthContext = createContext<AuthValue | null>(null);
+export const ServerCatalogContext = createContext<ServerCatalogValue | null>(null);
 export const FavoritesContext = createContext<FavoritesValue | null>(null);
 export const ReviewsContext = createContext<ReviewsValue | null>(null);
 export const DownloadsContext = createContext<DownloadsValue | null>(null);
@@ -41,6 +61,8 @@ function useRequired<T>(context: Context<T | null>, name: string): T {
 }
 
 export const useNotify = (): Notify => useRequired(NotifyContext, 'useNotify');
+export const useAuth = (): AuthValue => useRequired(AuthContext, 'useAuth');
+export const useServerCatalog = (): ServerCatalogValue => useRequired(ServerCatalogContext, 'useServerCatalog');
 export const useFavorites = (): FavoritesValue => useRequired(FavoritesContext, 'useFavorites');
 export const useReviews = (): ReviewsValue => useRequired(ReviewsContext, 'useReviews');
 export const useDownloads = (): DownloadsValue => useRequired(DownloadsContext, 'useDownloads');

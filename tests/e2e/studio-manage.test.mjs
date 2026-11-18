@@ -7,7 +7,7 @@ const NEW = '11.17.1';
 export default async function studioManage(t) {
   const { check, text, count, clickText, sleep, go, waitFor } = t;
   const page = await t.newPage();
-  const api = apiClient(t.api);
+  const api = apiClient(t.api, t.adminCookie);
   const apiGet = api.get;
   const apiSend = api.send;
   const startLatest = (await apiGet('/summary')).body.latest.version;
@@ -32,8 +32,9 @@ export default async function studioManage(t) {
   await page.setRequestInterception(true);
   page.on('request', (req) => {
     if (req.isInterceptResolutionHandled()) return;
-    // Match API calls only — not the Vite-served module /src/api/studio.ts.
-    const isApi = new URL(req.url()).pathname.startsWith('/api/');
+    // Match Studio API calls only — not the Vite-served module /src/api/studio.ts, and not sign-in or
+    // catalog calls, which the app needs before it can show the Studio pages at all.
+    const isApi = new URL(req.url()).pathname.startsWith('/api/studio/');
     if (isApi && mode === 'down') return void req.abort('failed');
     if (isApi && mode === 'craft' && req.method() === 'POST') return void req.respond(crafted);
     req.continue();

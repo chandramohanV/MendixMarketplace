@@ -3,6 +3,7 @@ import {
   CATEGORIES,
   COMPONENTS,
   INDUSTRIES,
+  LICENSE_MODELS,
   LICENSE_TYPES,
   PLATFORM_VERSIONS,
   PUBLISHER_LIST,
@@ -13,8 +14,6 @@ import {
 import { filterAndSort, type ExploreFilters, type SortKey } from '../src/features/explore/filters';
 import type { Component, ComponentType, LicenseModel, SupportLevel } from '../src/types';
 import { fail, ok, type ToolResult } from './result';
-
-export const LICENSE_MODELS: LicenseModel[] = ['Free', 'Paid', 'Free trial'];
 
 // ---------- search ----------
 export const SEARCH_SORTS = ['downloads', 'rating', 'updated', 'newest', 'name'] as const;

@@ -3,7 +3,7 @@ import { Modal } from '../../components/Modal';
 import type { ReleaseListItem, StudioRelease } from '../../../shared/studio';
 import { ApiError, deleteRelease, getRelease } from './api';
 import { ReleaseForm } from './ReleaseForm';
-import { useApiQuery } from './useApiQuery';
+import { useApiQuery } from '../../lib/useApiQuery';
 
 type OnSaved = (release: StudioRelease, created: boolean) => void;
 

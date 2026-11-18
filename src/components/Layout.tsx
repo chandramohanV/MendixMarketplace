@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
-import { useFavorites } from '../store/contexts';
+import { useAuth, useFavorites, useNotify } from '../store/contexts';
 import { Icon, type IconName } from './icons';
 import { routes } from '../lib/routes';
 
@@ -40,8 +40,26 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         <Link to={routes.myMarketplace()} className="topbar-avatar" title="Demo User – My Marketplace">
           DU
         </Link>
+        <UserMenu />
       </div>
     </header>
+  );
+}
+
+/** Who is signed in, with which role, and a way to sign out. */
+function UserMenu() {
+  const { user, logout } = useAuth();
+  const notify = useNotify();
+  if (!user) return null;
+  const signOut = () => logout().catch(() => notify('Could not sign out. Check your connection and try again.'));
+  return (
+    <div className="topbar-user">
+      <span className="topbar-username">{user.username}</span>
+      <span className={`role-badge ${user.role}`}>{user.role}</span>
+      <button className="topbar-signout" onClick={signOut}>
+        Sign out
+      </button>
+    </div>
   );
 }
 
@@ -70,6 +88,7 @@ function NavItem({
 
 function Sidebar({ open, collapsed, onCollapse }: { open: boolean; collapsed: boolean; onCollapse: () => void }) {
   const { favorites } = useFavorites();
+  const { isAdmin } = useAuth();
   const { pathname } = useLocation();
   const exploreActive = pathname === routes.home || pathname.startsWith(routes.explore());
   return (
@@ -93,6 +112,7 @@ function Sidebar({ open, collapsed, onCollapse }: { open: boolean; collapsed: bo
           <span className="nav-text">Download Studio</span>
         </NavLink>
         <NavItem to={routes.guidelines} icon="book" label="Guidelines" />
+        {isAdmin && <NavItem to={routes.admin} icon="shield" label="Admin" />}
       </nav>
       <button
         className="nav-item collapse-btn"
@@ -125,8 +145,9 @@ export default function Layout() {
   const isComponentPage = useMatch(routes.component(':slug'));
   const isStudioPage = useMatch(routes.studio);
   const isStudioManagePage = useMatch(routes.studioManage);
+  const isAdminPage = useMatch(routes.admin);
   // These pages use the full width, without the sidebar.
-  const isFullWidthPage = Boolean(isComponentPage || isStudioPage || isStudioManagePage);
+  const isFullWidthPage = Boolean(isComponentPage || isStudioPage || isStudioManagePage || isAdminPage);
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 

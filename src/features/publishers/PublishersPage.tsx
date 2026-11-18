@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
-import { COMPONENTS, PUBLISHER_LIST } from '../../data/components';
+import { PUBLISHER_LIST } from '../../data/components';
 import { routes } from '../../lib/routes';
 import { formatNumber } from '../../lib/format';
 import { initials } from '../../lib/text';
+import { useServerCatalog } from '../../store/contexts';
 
 export default function PublishersPage() {
+  const { components } = useServerCatalog();
   const rows = PUBLISHER_LIST.map((p) => {
-    const items = COMPONENTS.filter((c) => c.publisher === p.name);
+    const items = components.filter((c) => c.publisher === p.name);
     const rated = items.filter((c) => c.ratingCount);
     return {
       ...p,

@@ -43,6 +43,7 @@ export async function startEnv() {
   });
   return {
     base,
+    apiOrigin: api.url,
     apiBase: `${api.url}/api/studio`,
     browser,
     async close() {

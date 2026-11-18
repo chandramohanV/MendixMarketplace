@@ -52,6 +52,7 @@ export const CATEGORIES: string[] = [
   'Workflow',
 ];
 export const SUPPORT: SupportLevel[] = ['Platform', 'Partner', 'Community', 'Deprecated'];
+export const LICENSE_MODELS: LicenseModel[] = ['Free', 'Paid', 'Free trial'];
 export const SUPPORT_INFO: Record<SupportLevel, string> = {
   Platform: 'Supported and maintained by the platform team.',
   Partner: 'Supported by a certified technology partner.',

@@ -4,6 +4,7 @@ import { Icon } from '../../components/icons';
 import { RELEASE_TYPE_INFO, type ReleaseList, type ReleaseType, type StudioSummary } from '../../../shared/studio';
 import { longDate } from '../../lib/dates';
 import { routes } from '../../lib/routes';
+import { useAuth } from '../../store/contexts';
 import type { ApiError } from './api';
 import type { DownloadHandler } from './ReleaseNotesDialog';
 import { SkeletonRows, TypeBadge } from './ui';
@@ -44,6 +45,7 @@ export function ReleasesSection({
   onDownload: DownloadHandler;
 }) {
   const [isLegendOpen, setIsLegendOpen] = useState(true);
+  const { isAdmin } = useAuth();
   const { q, line, sort, page } = filters;
   const types = (summary?.types ?? RELEASE_TYPE_INFO) as Record<ReleaseType, string>;
 
@@ -59,9 +61,11 @@ export function ReleasesSection({
     <section className="releases">
       <div className="releases-head">
         <h2 className="releases-title">All Releases</h2>
-        <Link to={routes.studioManage} className="btn btn-secondary sm">
-          Manage releases
-        </Link>
+        {isAdmin && (
+          <Link to={routes.studioManage} className="btn btn-secondary sm">
+            Manage releases
+          </Link>
+        )}
       </div>
       <p>
         We recommend using a supported version for all production apps to enjoy best stability.

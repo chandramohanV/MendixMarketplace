@@ -1,4 +1,6 @@
-// CLI entry: `npm run dev:api` (PORT, DATA_DIR and CORS_ORIGIN env vars are optional).
+// CLI entry: `npm run dev:api`. Optional env vars: PORT, DATA_DIR, CORS_ORIGIN, AUTH_SECRET,
+// USER_PASSWORD and ADMIN_PASSWORD.
+import { accountsFromEnv } from './auth';
 import { DEFAULT_DATA_DIR, startServer } from './server';
 
 const port = Number(process.env.PORT ?? 5174);
@@ -7,8 +9,14 @@ const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173,http://12
   .split(',')
   .map((s) => s.trim());
 
-const server = await startServer({ port, dataDir, corsOrigins });
-console.log(`[api] Studio API listening on ${server.url}/api/studio (data: ${server.store.file})`);
+const server = await startServer({
+  port,
+  dataDir,
+  corsOrigins,
+  accounts: accountsFromEnv(process.env),
+  authSecret: process.env.AUTH_SECRET,
+});
+console.log(`[api] API listening on ${server.url}/api (data: ${server.releases.file}, ${server.components.location})`);
 
 const shutdown = () => {
   server.close().finally(() => process.exit(0));

@@ -1,8 +1,8 @@
 // Tool input schemas. Enum values come from the catalog and shared/studio.ts, so they never drift.
 import { z } from 'zod';
 import { ListQuerySchema } from '../shared/studio';
-import { CATEGORIES, INDUSTRIES, PLATFORM_VERSIONS, SUPPORT, TYPES } from '../src/data/components';
-import { LICENSE_MODELS, MAX_LIMIT, SEARCH_SORTS } from './tools';
+import { CATEGORIES, INDUSTRIES, LICENSE_MODELS, PLATFORM_VERSIONS, SUPPORT, TYPES } from '../src/data/components';
+import { MAX_LIMIT, SEARCH_SORTS } from './tools';
 
 export const componentRef = z
   .string()

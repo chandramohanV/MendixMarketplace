@@ -16,6 +16,7 @@ function withQuery(path: string, query: Record<string, string | number | undefin
 
 export const routes = {
   home: '/',
+  admin: '/admin',
   guidelines: '/guidelines',
   publishers: '/publishers',
   studio: '/studio',

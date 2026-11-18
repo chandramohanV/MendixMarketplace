@@ -5,7 +5,8 @@
 //   npm run test:e2e
 //   BROWSER_PATH="C:/path/to/chrome.exe" npm run test:e2e   (override browser)
 import { startEnv } from '../support/env.mjs';
-import { clickText, count, sleep, text, waitFor } from './helpers.mjs';
+import authAdmin from './auth-admin.test.mjs';
+import { clickText, count, signInCookie, signInPage, sleep, text, waitFor } from './helpers.mjs';
 import marketplace from './marketplace.test.mjs';
 import studioManage from './studio-manage.test.mjs';
 import studio from './studio.test.mjs';
@@ -16,9 +17,11 @@ const SUITES = [
   ['Studio download page', studio],
   ['Contribute / submit', submit],
   ['Studio — manage releases', studioManage],
+  ['Sign-in and admin console', authAdmin],
 ];
 
 const env = await startEnv();
+const adminCookie = await signInCookie(env.apiOrigin, 'admin');
 let pass = 0;
 let fail = 0;
 const failures = [];
@@ -26,8 +29,14 @@ const consoleErrors = new Set();
 // Console errors a suite has declared as expected (e.g. Chrome logging a deliberate 409 response).
 const allowed = [];
 
-async function newPage(viewport = { width: 1440, height: 1000 }) {
-  const page = await env.browser.newPage();
+/**
+ * Opens a page signed in as `as`: 'admin' (default), 'user', or null for a signed-out page. Admin pages
+ * share the default browser context (and its localStorage), as the suites always have; other roles get
+ * their own context so their session cannot leak into admin pages.
+ */
+async function newPage(viewport = { width: 1440, height: 1000 }, { as = 'admin' } = {}) {
+  const context = as === 'admin' ? env.browser.defaultBrowserContext() : await env.browser.createBrowserContext();
+  const page = await context.newPage();
   await page.setViewport(viewport);
   page.on('console', (m) => {
     if (m.type() !== 'error' && m.type() !== 'warning') return;
@@ -35,6 +44,7 @@ async function newPage(viewport = { width: 1440, height: 1000 }) {
     if (!allowed.some((re) => re.test(message))) consoleErrors.add(message);
   });
   page.on('pageerror', (e) => consoleErrors.add('pageerror: ' + e.message));
+  if (as) await signInPage(page, env.base, as);
   return page;
 }
 
@@ -43,6 +53,8 @@ const t = {
   base: env.base,
   /** Studio API base URL, for reading expected values directly from the server. */
   api: env.apiBase,
+  /** Cookie header for API calls that need an admin (e.g. setting up releases). */
+  adminCookie,
   newPage,
   go: (page, path) => page.goto(env.base + path, { waitUntil: 'networkidle0' }),
   check(name, ok, info = '') {
