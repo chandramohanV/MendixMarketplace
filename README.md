@@ -214,7 +214,7 @@ curl -X DELETE "$API/releases/11.17.1"
 | Claude Desktop | stdio                     | `mcp/stdio.ts` | On your machine; Claude Desktop starts it             |
 | claude.ai      | Streamable HTTP at `/mcp` | `mcp/http.ts`  | The Cloudflare Worker (and `npm run dev:api` locally) |
 
-**Remote endpoint:** `https://component-marketplace.component-marketplace.workers.dev/mcp`. It's stateless (a fresh server per request, JSON responses) and needs no authentication, because it only reads the same public catalog and release data the site already shows. Inside the Worker, the Studio tools call the API in-process rather than over the network.
+**Remote endpoint:** `https://component-marketplace.component-marketplace.workers.dev/mcp`. It's stateless (a fresh server per request, JSON responses) and needs no authentication, because it only reads the same public catalog and release data the site already shows. Inside the Worker, the Studio tools call the API in-process rather than over the network. Opening the URL in a browser returns a short JSON description of the endpoint, and JSON-only clients (e.g. plain `curl -H "Accept: application/json"`) work as well as SSE-capable ones.
 
 | Tool                     | What it returns                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |

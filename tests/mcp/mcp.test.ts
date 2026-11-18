@@ -8,7 +8,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
-import { MCP_PATH } from '../../mcp/http';
+import { ENDPOINT_INFO, MCP_PATH } from '../../mcp/http';
 import { ok } from '../../mcp/result';
 import { createServer } from '../../mcp/server';
 import { createStudioClient, type StudioClient } from '../../mcp/studio';
@@ -239,5 +239,22 @@ describe('remote MCP endpoint over HTTP', () => {
       fetch(`${server.url}/api/studio/summary`).then((r) => r.json()),
     ]);
     assert.deepEqual(JSON.parse(textOf(summary)), direct);
+  });
+
+  test('describes itself to a browser visit instead of rejecting it', async () => {
+    const response = await fetch(server.url + MCP_PATH, { headers: { accept: 'text/html' } });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), ENDPOINT_INFO);
+  });
+
+  test('answers a POST from a client that only accepts JSON', async () => {
+    const response = await fetch(server.url + MCP_PATH, {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.ok(body.result.tools.some((tool: { name: string }) => tool.name === 'search_components'));
   });
 });
