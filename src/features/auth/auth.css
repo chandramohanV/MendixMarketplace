@@ -50,22 +50,6 @@
   color: #fff;
 }
 
-.role-badge {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-radius: 3px;
-  padding: 1px 6px;
-  background: var(--navy-search);
-  border: 1px solid var(--navy-border);
-}
-
-.role-badge.admin {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
 .topbar-signout {
   background: none;
   border: 1px solid var(--navy-border);
@@ -78,10 +62,4 @@
 
 .topbar-signout:hover {
   background: var(--navy-search);
-}
-
-@media (max-width: 720px) {
-  .topbar-username {
-    display: none;
-  }
 }

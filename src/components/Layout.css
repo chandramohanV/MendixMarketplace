@@ -129,8 +129,9 @@
 }
 
 .topbar-avatar {
-  width: 32px;
+  min-width: 32px;
   height: 32px;
+  padding: 0 10px;
   border-radius: 4px;
   background: var(--login);
   color: #fff;
@@ -138,6 +139,7 @@
   place-items: center;
   font-size: 12px;
   font-weight: 600;
+  text-transform: capitalize;
   text-decoration: none !important;
 }
 

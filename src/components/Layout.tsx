@@ -37,16 +37,13 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         <Link to={routes.guidelines} className="topbar-icon" title="Help">
           <Icon name="help" />
         </Link>
-        <Link to={routes.myMarketplace()} className="topbar-avatar" title="Demo User – My Marketplace">
-          DU
-        </Link>
         <UserMenu />
       </div>
     </header>
   );
 }
 
-/** Who is signed in, with which role, and a way to sign out. */
+/** The signed-in role (linking to My Marketplace) and a way to sign out. */
 function UserMenu() {
   const { user, logout } = useAuth();
   const notify = useNotify();
@@ -54,8 +51,13 @@ function UserMenu() {
   const signOut = () => logout().catch(() => notify('Could not sign out. Check your connection and try again.'));
   return (
     <div className="topbar-user">
-      <span className="topbar-username">{user.username}</span>
-      <span className={`role-badge ${user.role}`}>{user.role}</span>
+      <Link
+        to={routes.myMarketplace()}
+        className="topbar-avatar"
+        title={`Signed in as ${user.username} – My Marketplace`}
+      >
+        {user.role}
+      </Link>
       <button className="topbar-signout" onClick={signOut}>
         Sign out
       </button>

@@ -42,7 +42,7 @@ export default async function authAdmin(t) {
     'a normal user lands on the page they opened after signing in',
     await waitFor(async () => (await text(guest, 'h1')).includes('Publishers')),
   );
-  check('the top bar shows the user role', (await text(guest, '.role-badge')).toLowerCase() === 'user');
+  check('the top bar shows the user role', (await text(guest, '.topbar-avatar')).toLowerCase() === 'user');
   check('a normal user has no Admin link', !(await clickText(guest, '.nav-item', 'Admin')));
   await go(guest, '/studio');
   await waitFor(async () => (await count(guest, '.release-table tbody tr:not(.skeleton-row)')) > 0);
@@ -62,7 +62,7 @@ export default async function authAdmin(t) {
   // ---------- admin ----------
   const admin = await t.newPage();
   await go(admin, '/');
-  check('the top bar shows the admin role', (await text(admin, '.role-badge')).toLowerCase() === 'admin');
+  check('the top bar shows the admin role', (await text(admin, '.topbar-avatar')).toLowerCase() === 'admin');
   await clickText(admin, '.nav-item', 'Admin');
   check(
     'the Admin link opens the admin console',
